@@ -1,0 +1,1 @@
+{"base":{"scan_range":360,"d_sources":4,"inference_mode":false,"snr_db":[-5,30],"array":{"antennas":8,"d_lambda":1.0,"kind":2},"signal":{"alpha":1.0,"T":0.5,"fs":25,"n_samples":200,"kind":3}},"deep_augmented":{"eps_roots":0.00001,"eps_rcov":1.0,"base_name":"classic","model_dir":"."}}
