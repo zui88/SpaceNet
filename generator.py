@@ -2,9 +2,13 @@ import numpy as np
 
 class ULASignalGenerator:
 
-    def __init__(self, n_antennas = 8):
+    def __init__(self, n_antennas = 8, d_lambda = 1):
+        ##################################################
+        # d_lambda = d / lambda
+        ##################################################
         self.rng = np.random.default_rng()
         self.n_antennas = n_antennas
+        self.d_lambda = d_lambda
 
     def get_steering(self, thetas):
         ##################################################
@@ -13,7 +17,7 @@ class ULASignalGenerator:
         # A.shape() = (antennas x sources)
         ##################################################
         antennas_idx = np.arange(self.n_antennas)[:, None]
-        A = np.exp(1j * np.pi * np.sin(thetas) * antennas_idx)  # broadcast sin with numbers of antennas
+        A = np.exp(1j * np.pi * self.d_lambda * np.sin(thetas) * antennas_idx)  # broadcast sin with numbers of antennas
         return A
 
     def get_incident_signals(self, k_sources, n_samples):
@@ -25,9 +29,6 @@ class ULASignalGenerator:
         x = y = self.rng.standard_normal((k_sources, n_samples))
         s = 1/np.sqrt(2) * (x + 1j*y)
         return s
-
-    def get_nsensores(self):
-        return self.n_antennas
 
     def generate(self, thetas, n_samples=10, snr_db=20):
         ##################################################
