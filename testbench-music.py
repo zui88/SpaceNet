@@ -1,37 +1,21 @@
 import numpy as np
-from matplotlib import pyplot as plt
 from generator import ULASignalGenerator
-from doa import Music, RootMusic
+from doa import Music, RootMusic, ClassicMusic
 
 thetas = np.deg2rad([-20, 20, 40, 60])
-signal_generator = ULASignalGenerator()
-r_sensed = signal_generator.generate(thetas)
+signal_generator = ULASignalGenerator(n_antennas=10)
+r_sensed = signal_generator.generate(thetas, n_samples=50, snr_db=10)
 
 ##################################################
 # music
 ##################################################
-music_engine = Music(steering_provider=signal_generator)
-spec, scan = music_engine.get_doa(r=r_sensed)
-
-plt.plot(scan, spec)
-plt.show()
+music_engine = ClassicMusic(steering_provider=signal_generator)
+est_thetas = music_engine.get_doa(r=r_sensed)
+print(est_thetas)
 
 ##################################################
 # root music
 ##################################################
 root_engine = RootMusic(steering_provider=signal_generator)
-roots = root_engine.get_doa(r=r_sensed)
-
-phi = np.linspace(0, 2*np.pi, 1000)
-unit_circle = np.exp(1j * phi)
-plt.figure()
-plt.plot(unit_circle.real, unit_circle.imag)
-plt.scatter(roots.real, roots.imag)
-plt.axhline(0)
-plt.axvline(0)
-plt.gca().set_aspect('equal', 'box')
-plt.xlabel("Real")
-plt.ylabel("Imag")
-plt.title("Root-MUSIC Roots in Complex Plane")
-plt.grid(True)
-plt.show()
+est_thetas = root_engine.get_doa(r=r_sensed)
+print(est_thetas)
