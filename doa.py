@@ -15,10 +15,10 @@ def compute_unambiguous_sources(eigs, n_samples, n_sensors):
 
 
 """
-Rxx wrapper for holding
-- cov
-- n_samples
-- n_sensors
+class Rxx_hat: wrapper for covariance matrix internals
+cov: covariance matrix
+n_samples: number of samples
+n_sensors: number of sensors
 """
 class Rxx():
     None
@@ -29,23 +29,29 @@ class Music(object):
     def __init__(self, steering_provider):
         self.steering_provider = steering_provider
 
-    def get_doa(self, r):
+    def compute_doa(self, r):
         """
         DEEP ROOT MUSIC ALGORITHM FOR DATA-DRIVEN DOA ESTIMATION
         P. 1
-        :param r:
-        :return:
+
+        :param r: sensed signal at the antennas
+        :return: thetas of the estimated sources in degrees
         """
         Rxx_hat        = self.compute_estimated_rcov(r)
         U, k_est       = self.compute_evd(Rxx_hat)
         Un             = self.compute_noise_subspace(U, k_est)
         spectrum       = self.compute_spectrum(Un)
-        peaks          = self.find_peaks(spectrum, k_est)
+        peaks = self.identify_signal_sources(spectrum, k_est)
         estimated_doas = self.compute_angles(peaks)
 
         return estimated_doas
 
     def compute_estimated_rcov(self, r):
+        """
+
+        :param r:
+        :return:
+        """
         n_sensors, n_samples = r.shape
         Rxx_hat = Rxx()
         Rxx_hat.cov = (r @ r.conj().T) / n_samples
@@ -54,6 +60,11 @@ class Music(object):
         return Rxx_hat
 
     def compute_evd(self, Rxx_hat):
+        """
+
+        :param Rxx_hat:
+        :return:
+        """
         # eigen decomposition
         eigs, U = np.linalg.eig(Rxx_hat.cov)
 
@@ -66,16 +77,43 @@ class Music(object):
         return U, k_est
 
     def compute_noise_subspace(self, eigsv, k_est):
+        """
+        exploiting the eigenstructure and the fact that the noise is orthogonal
+        to the signal space to segregate the noise space
+
+        :param eigsv: the sorted eigenvectors of the estimated covariance matrix: lambda_1 >= lambda_2 >= ... lambda_m
+        :param k_est: the estimated number of sources
+        :return: the noise subspace: (Un_1, ..., Un_l)^T
+        """
         Un = eigsv[:, k_est:]
         return Un
 
     def compute_spectrum(self, Un):
+        """
+        generate the space where the estimated doas can be found by applying hypotheses about the doas of the signals
+
+        :param Un: the estimated noise subspace
+        :return: the space of possible doas (root-musik: roots; classic music: spectrum values)
+        """
         None
 
-    def find_peaks(self, spectrum, k_est):
+    def identify_signal_sources(self, spectrum, k_est):
+        """
+        Identifies k_est strongest signal source directions from the spectrum
+
+        :param spectrum: the space of possible signal sources (root-musik: roots; classic music: spectrum values)
+        :param k_est: the estimated number of sources
+        :return: the signal source information (root-musik: roots; classic music: indices)
+        """
         None
 
     def compute_angles(self, peaks):
+        """
+        converts the peak information into angles
+
+        :param peaks: meaningful information about the peaks (root-musik: roots; classic music: indices)
+        :return: thetas of the estimated signals in degrees
+        """
         None
 
 
@@ -93,37 +131,38 @@ class ClassicMusic(Music):
         self._scan_range = scan_range
         return spectrum
 
-    def find_peaks(self, spectrum, k_est):
+    def identify_signal_sources(self, spectrum, k_est):
         if k_est <= 0:
             return np.array()
 
         # local maxima indices
-        left_neighbor     = lambda s: s[1:-1] > s[:-2]
-        right_neighbor    = lambda s: s[1:-1] > s[2:]
-        peaks             = np.where(left_neighbor(spectrum) & right_neighbor(spectrum))[0] # array of indices
-        filtered_spectrum = spectrum[peaks]
+        gt_left_neighbor  = lambda s: s[1:-1] > s[:-2]
+        gt_right_neighbor = lambda s: s[1:-1] > s[2:]
+        peaks_idx         = np.where(gt_left_neighbor(spectrum) & gt_right_neighbor(spectrum))[0] # array of indices
+        filtered_spectrum = spectrum[peaks_idx]
         sort_fspec_idx    = np.argsort(filtered_spectrum)[::-1]
-        top_peaks         = peaks[sort_fspec_idx][:k_est]
-        return top_peaks
+        top_peaks_idx     = peaks_idx[sort_fspec_idx][:k_est]
+        return top_peaks_idx
 
     def compute_angles(self, peaks):
         if peaks is None or len(peaks) == 0:
             return np.array()
         # peaks are indices into scan grid to retrieve the angeles
-        angles = self._scan_range[np.asarray(peaks, dtype=int)]
+        angles = self._scan_range[peaks]
         return np.rad2deg(angles)
 
 
 class RootMusic(Music):
 
     def compute_spectrum(self, Un):
-        F           = Un @ Un.conj().T
-        M           = F.shape[0] - 1
-        diag_coeffs = [np.sum(np.diag(F, l)) for l in range(-(M-1), M)]
-        zeros       = np.roots(diag_coeffs[::-1])
-        return zeros
+        F              = Un @ Un.conj().T
+        M              = F.shape[0]
+        diag_coeffs    = [np.sum(np.diag(F, l)) for l in range(-(M-1), M)]
+        coeffs_ordered = diag_coeffs[::-1] # sort the polys from z^n, z^n-1, ..., z^0
+        roots          = np.roots(coeffs_ordered)
+        return roots
 
-    def find_peaks(self, spectrum, k_est):
+    def identify_signal_sources(self, spectrum, k_est):
         inner_roots = spectrum[np.abs(spectrum) < 1]
         delta       = 1 - np.abs(inner_roots)
         idx         = np.argsort(delta)
