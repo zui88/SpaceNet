@@ -2,16 +2,64 @@ import numpy as np
 import scipy.stats as stats
 
 
-def compute_unambiguous_sources(eigs, n_samples, n_sensors):
-    # exploiting the eigenstructure of the matrix
-    # P.635; 14.111
-    def mdl(i):
-        noise = eigs[i:]
-        am = np.mean(noise)
-        gm = stats.gmean(noise)
-        return -n_samples * (n_sensors - 1) * np.log(gm / am) + 1 / 2 * i * (2 * n_sensors - i) * np.log(n_samples)
+def mos_penalty(i, eigs, n_samples, n_sensors):
+    """
+    model order selection penalty term for mdl and aic
 
-    return np.argmin([mdl(i) for i in range(n_sensors - 1)])
+    :param i:
+    :param eigs:
+    :param n_samples:
+    :param n_sensors:
+    :return:
+    """
+    noise        = eigs[i:]
+    am           = np.mean(noise)
+    gm           = stats.gmean(noise)
+    penalty_term = -1 * (n_samples * (n_sensors - 1) * np.log(gm / am))
+    return penalty_term
+
+def mdl(i, eigs, n_samples, n_sensors):
+    """
+    P.635; 14.111
+
+    :param i:
+    :param eigs:
+    :param n_samples:
+    :param n_sensors:
+    :return:
+    """
+    penalty = mos_penalty(i, eigs, n_samples, n_sensors)
+    return penalty + 0.5 * i * (2 * n_sensors - i) * np.log(n_samples)
+
+
+def aic(i, eigs, n_samples, n_sensors):
+    """
+    P.635; 14.110
+
+    :param i:
+    :param eigs:
+    :param n_samples:
+    :param n_sensors:
+    :return:
+    """
+    penalty = mos_penalty(i, eigs, n_samples, n_sensors)
+    return penalty + i * (2 * n_sensors - i)
+
+
+def compute_unambiguous_sources(eigs, n_samples, n_sensors, mos_algo=mdl):
+    """
+    the number of sources is the minimizing value of the model order selection i el_of {1, ..., P_max},
+    where P_max is the number of sensors minus one
+    P.635
+
+    :param eigs:
+    :param n_samples:
+    :param n_sensors:
+    :param mos_algo:
+    :return:
+    """
+    k_est = np.argmin([mos_algo(i, eigs, n_samples, n_sensors) for i in range(n_sensors - 1)])
+    return k_est
 
 
 """
