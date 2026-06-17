@@ -24,7 +24,6 @@ class DelayDopperEngine(Engine[RetDD]):
 
     @property
     def capability_registry(self) -> CapabilityRegistryType:
-        """Property to access the capability registry"""
         return self._capability_registry
 
 

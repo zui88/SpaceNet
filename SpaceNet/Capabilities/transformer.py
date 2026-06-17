@@ -1,7 +1,7 @@
-from typing import Protocol, Any
+from typing import Protocol, Any, TypeAlias
 
 
-type Dataset = Any
+Dataset: TypeAlias = Any
 
 
 class Transformer(Protocol):

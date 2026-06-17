@@ -44,6 +44,6 @@ class PermutatedLoss(keras.losses.Loss, ABC):
                 error = self.compute_error(ground_truth, perm_pred)
                 error = tf.math.sqrt(1 / predictions.shape[0]) * tf.linalg.norm(error)
                 loss_permuted.append(error)
-            loss_min_batched.append(tf.keras.ops.min(tf.stack(loss_permuted)))
+            loss_min_batched.append(tf.reduce_min(tf.stack(loss_permuted)))
 
         return tf.stack(loss_min_batched)

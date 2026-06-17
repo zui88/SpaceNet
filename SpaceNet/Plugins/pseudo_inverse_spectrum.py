@@ -43,7 +43,7 @@ class ComputePseudoInverseSpectrum(Plugin):
 
         for Un in Un_batched:
             # hypothesis: if angles are pointing to sources
-            scan_range = tf.keras.ops.linspace(-1 * np.pi / 2, np.pi / 2, self.scan_range, endpoint=False)
+            scan_range = tf.linspace(-1 * np.pi / 2, np.pi / 2, self.scan_range)
             # pyrefly: ignore [bad-argument-count]
             a          = self.steering(scan_range)
 
@@ -52,7 +52,7 @@ class ComputePseudoInverseSpectrum(Plugin):
 
             # pseudo spectrum: 1 / (a^H(theta) * Un * Un^H * a(theta))
             projection = tf.matmul(Un, a, adjoint_a=True)
-            spectrum   = 1 / tf.keras.ops.sum(tf.keras.ops.abs(projection)**2, axis=0)
+            spectrum   = 1 / tf.reduce_sum(tf.abs(projection)**2, axis=0)
             spectrum_batched.append(spectrum)
             spectrum_obj.append(Spectrum(spectrum, scan_range))
 

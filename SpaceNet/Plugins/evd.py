@@ -32,7 +32,7 @@ class EVD(Plugin):
         for cov in r_hat.cov_batch:
             # if there is a guaranty that cov is hermitian then 'eigh' could be applied
             eigs, eigsv = tf.linalg.eigh(cov)
-            idx         = tf.keras.ops.argsort(tf.abs(eigs))[::-1]
+            idx         = tf.argsort(tf.abs(eigs), direction="DESCENDING")
             eigs_batched.append(tf.gather(eigs, idx))
             eigsv_batched.append(tf.gather(eigsv, idx, axis=1))
 

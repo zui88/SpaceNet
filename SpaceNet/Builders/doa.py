@@ -80,7 +80,7 @@ def _make_trainable(cls: Type[DoaEngine]) -> Type[DoaEngine]:
 
         def transform(self, r_sensed):
             if self.transformer is None:
-                self.transformer = self.capability_registry[DeepAugment].transformer
+                self.transformer = self._capability_registry[DeepAugment].transformer
                 if self.transformer is None: raise NotImplementedError("No transformer registered")
 
             return {"r_sensed":self.transformer(r_sensed)}
@@ -214,7 +214,7 @@ def _create_deep_music(configs: Optional[DoaConfig.Config], cls: Type[Recipe], m
 
     DeepEngine                                = _make_trainable(DoaEngine)
     engine                                    = DeepEngine(configs, cls)
-    engine.capability_registry[Configuration] = configDecoder
+    engine._capability_registry[Configuration] = configDecoder
     base_path                                 = configs.deep_augmented.model_dir
     base_name                                 = configs.deep_augmented.base_name
 
@@ -225,7 +225,7 @@ def _create_deep_music(configs: Optional[DoaConfig.Config], cls: Type[Recipe], m
     else:
         capability.register_models(defined_models)
 
-    engine.capability_registry[DeepAugment] = capability
+    engine._capability_registry[DeepAugment] = capability
 
     engine.init()
 

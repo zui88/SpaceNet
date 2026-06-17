@@ -12,13 +12,15 @@ from SpaceNet.Recipes.recipe import Recipe
 
 from typing import Callable, Optional, Type, Dict
 
+from tensorflow.python.trackable.data_structures import NoDependency
+
 
 class DoaEngine(Engine[RetDoa]):
 
 
     def __init__(self, configs: DoaConfig.Config, recipe_cls: Type[Recipe]):
         self.recipe: Optional[Recipe] = None
-        self._capability_registry: CapabilityRegistryType = {}
+        self._capability_registry: CapabilityRegistryType = NoDependency({})
         self.recipe_cls: Type[Recipe] = recipe_cls
         self.configs = configs
         self.base_config = configs.base
@@ -27,7 +29,6 @@ class DoaEngine(Engine[RetDoa]):
 
     @property
     def capability_registry(self) -> CapabilityRegistryType:
-        """Property to access the capability registry"""
         return self._capability_registry
 
 

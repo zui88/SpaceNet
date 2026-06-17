@@ -1,8 +1,7 @@
-from SpaceNet.Capabilities.configuration import Configuration
 from SpaceNet.Capabilities.deep_augment import DeepAugment
 
+from typing import Any, Protocol, TypeVar, TypeAlias, Union, Dict, Type
 from dataclasses import dataclass
-from typing import Any, Protocol, TypeVar, TypeAlias, Union, Optional, Dict, Type
 
 import numpy as np
 

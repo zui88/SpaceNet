@@ -1,3 +1,6 @@
+import sys
+sys.path.append(".")
+
 from SpaceNet.Utils.DeepAugmented.TrainingData.doa import generate_training_set
 from SpaceNet.Utils.DeepAugmented.print import save_print_history
 from SpaceNet.Builders.doa import create_deep_classic_music
