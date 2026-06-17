@@ -1,6 +1,0 @@
-[submodule "SubspaceNet"]
-	path = SubspaceNet
-	url = https://github.com/ShlezingerLab/SubspaceNet.git
-[submodule "DA-MUSIC_ICASSP22"]
-	path = DA-MUSIC_ICASSP22
-	url = https://github.com/julianmer/DA-MUSIC_ICASSP22.git
