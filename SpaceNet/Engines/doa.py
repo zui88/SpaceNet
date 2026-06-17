@@ -24,14 +24,6 @@ class DoaEngine(Engine[RetDoa]):
         self.base_config = configs.base
         self.deep_config = configs.deep_augmented
 
-        self.dispatcher: Dict[Type[Recipe], Callable[[], Recipe]] = {
-            DeepClassicDOA: self._construct_deep_classic_doa,
-            DeepClassicDOA_WS: self._construct_deep_classic_doa_ws,
-            ClassicDOA: self._construct_classic,
-            RootDOA: self._construct_root_doa,
-            DeepRootDOA: self._construct_deep_root_doa
-        }
-
 
     @property
     def capability_registry(self) -> CapabilityRegistryType:
@@ -47,8 +39,16 @@ class DoaEngine(Engine[RetDoa]):
         -------
 
         """
+        dispatcher: Dict[Type[Recipe], Callable[[], Recipe]] = {
+            DeepClassicDOA: self._construct_deep_classic_doa,
+            DeepClassicDOA_WS: self._construct_deep_classic_doa_ws,
+            ClassicDOA: self._construct_classic,
+            RootDOA: self._construct_root_doa,
+            DeepRootDOA: self._construct_deep_root_doa
+        }
+
         try:
-            self.recipe = self.dispatcher[self.recipe_cls]()
+            self.recipe = dispatcher[self.recipe_cls]()
         except KeyError as e:
             raise NotImplementedError(f"Recipe not registered for dispatching: {e}")
 

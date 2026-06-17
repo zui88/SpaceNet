@@ -115,9 +115,8 @@ class DeepAugmentV1:
                 if frozen:
                     model.trainable = False
 
-        optimizer: keras.optimizers.Optimizer = keras.optimizers.Adam(
+        optimizer: keras.optimizers.Optimizer = keras.optimizers.legacy.Adam(
             learning_rate=learning_rate,
-            weight_decay=1e-9,
         )
 
         self.engine.compile(
