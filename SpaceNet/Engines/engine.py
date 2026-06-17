@@ -54,10 +54,14 @@ class Engine(Protocol[T]):
         registering the config.
     """
 
-
-    capability_registry: CapabilityRegistryType
+    # Use private attribute to prevent Keras serialization issues with Type keys
+    _capability_registry: CapabilityRegistryType
     configs: Any
 
+    @property
+    def capability_registry(self) -> CapabilityRegistryType:
+        """Property to access the capability registry"""
+        ...
 
     def estimate(self, **inputs) -> T:
         ...

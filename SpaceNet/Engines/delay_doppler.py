@@ -13,13 +13,19 @@ class DelayDopperEngine(Engine[RetDD]):
 
     def __init__(self, config: DDConfig, recipe_cls: Type[Recipe]):
         self.recipe: Optional[Recipe] = None
-        self.capability_registry: CapabilityRegistryType = {}
+        self._capability_registry: CapabilityRegistryType = {}
         self.recipe_cls: Type[Recipe] = recipe_cls
         self.config = config
 
         self.dispatcher: Dict[Type[Recipe], Callable[[], Recipe]] = {
             ClassicDelayDoppler: self._construct_classic_dd,
         }
+
+
+    @property
+    def capability_registry(self) -> CapabilityRegistryType:
+        """Property to access the capability registry"""
+        return self._capability_registry
 
 
     def init(self):

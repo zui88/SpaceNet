@@ -18,7 +18,7 @@ class DoaEngine(Engine[RetDoa]):
 
     def __init__(self, configs: DoaConfig.Config, recipe_cls: Type[Recipe]):
         self.recipe: Optional[Recipe] = None
-        self.capability_registry: CapabilityRegistryType = {}
+        self._capability_registry: CapabilityRegistryType = {}
         self.recipe_cls: Type[Recipe] = recipe_cls
         self.configs = configs
         self.base_config = configs.base
@@ -31,6 +31,12 @@ class DoaEngine(Engine[RetDoa]):
             RootDOA: self._construct_root_doa,
             DeepRootDOA: self._construct_deep_root_doa
         }
+
+
+    @property
+    def capability_registry(self) -> CapabilityRegistryType:
+        """Property to access the capability registry"""
+        return self._capability_registry
 
 
     def init(self):
@@ -49,7 +55,7 @@ class DoaEngine(Engine[RetDoa]):
 
 
     def _construct_deep_classic_doa_ws(self) -> Recipe:
-        models = self.capability_registry[DeepAugment].get_models()
+        models = self._capability_registry[DeepAugment].get_models()
         if models is None:
             raise NotImplementedError("models not registered")
 
@@ -67,7 +73,7 @@ class DoaEngine(Engine[RetDoa]):
 
 
     def _construct_deep_classic_doa(self) -> Recipe:
-        models = self.capability_registry[DeepAugment].get_models()
+        models = self._capability_registry[DeepAugment].get_models()
         if models is None:
             raise NotImplementedError("models not registered")
 
@@ -90,7 +96,7 @@ class DoaEngine(Engine[RetDoa]):
 
 
     def _construct_deep_root_doa(self) -> Recipe:
-        models = self.capability_registry[DeepAugment].get_models()
+        models = self._capability_registry[DeepAugment].get_models()
         if models is None:
             raise NotImplementedError("models not registered")
 
