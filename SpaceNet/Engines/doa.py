@@ -10,21 +10,21 @@ from SpaceNet.Engines.engine import RetDoa, Doa, Engine
 from SpaceNet.Recipes.root_doa import RootDOA
 from SpaceNet.Recipes.recipe import Recipe
 
-from typing import Callable
+from typing import Callable, Optional, Type, Dict
 
 
 class DoaEngine(Engine[RetDoa]):
 
 
-    def __init__(self, configs: DoaConfig.Config, recipe_cls: type[Recipe]):
-        self.recipe: Recipe | None = None
+    def __init__(self, configs: DoaConfig.Config, recipe_cls: Type[Recipe]):
+        self.recipe: Optional[Recipe] = None
         self.capability_registry: CapabilityRegistryType = {}
-        self.recipe_cls: type[Recipe] = recipe_cls
+        self.recipe_cls: Type[Recipe] = recipe_cls
         self.configs = configs
         self.base_config = configs.base
         self.deep_config = configs.deep_augmented
 
-        self.dispatcher: dict[type[Recipe], Callable[[], Recipe]] = {
+        self.dispatcher: Dict[Type[Recipe], Callable[[], Recipe]] = {
             DeepClassicDOA: self._construct_deep_classic_doa,
             DeepClassicDOA_WS: self._construct_deep_classic_doa_ws,
             ClassicDOA: self._construct_classic,

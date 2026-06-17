@@ -5,19 +5,19 @@ from SpaceNet.Configs.DelayDoppler.config import Config as DDConfig
 from SpaceNet.Engines.engine import RetDD, Engine
 from SpaceNet.Recipes.recipe import Recipe
 
-from typing import Callable
+from typing import Callable, Optional, Type, Dict
 
 
 class DelayDopperEngine(Engine[RetDD]):
 
 
-    def __init__(self, config: DDConfig, recipe_cls: type[Recipe]):
-        self.recipe: Recipe | None = None
+    def __init__(self, config: DDConfig, recipe_cls: Type[Recipe]):
+        self.recipe: Optional[Recipe] = None
         self.capability_registry: CapabilityRegistryType = {}
-        self.recipe_cls: type[Recipe] = recipe_cls
+        self.recipe_cls: Type[Recipe] = recipe_cls
         self.config = config
 
-        self.dispatcher: dict[type[Recipe], Callable[[], Recipe]] = {
+        self.dispatcher: Dict[Type[Recipe], Callable[[], Recipe]] = {
             ClassicDelayDoppler: self._construct_classic_dd,
         }
 

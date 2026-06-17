@@ -17,7 +17,7 @@ from SpaceNet.Utils.DeepAugmented.Networks.DeepClassic.selector import build_net
 from SpaceNet.Utils.DeepAugmented.Networks.DeepClassic.surrogate import build_network as build_surrogate
 from SpaceNet.Utils.DeepAugmented.Networks.DeepRoot.rcov import build_network as build_rcov
 
-from typing import Callable, Any
+from typing import Callable, Any, Optional, Type, Dict, Tuple, List
 
 import numpy as np
 import keras
@@ -42,7 +42,7 @@ def create_root_music(configs: DoaConfig.Config) -> Engine[RetDoa]:
     return DoaEngine(configs, RootDOA)
 
 
-def _make_trainable(cls: type[DoaEngine]) -> type[DoaEngine]:
+def _make_trainable(cls: Type[DoaEngine]) -> Type[DoaEngine]:
     """
     Extend the given class to be a keras model that supports training.  The 'trainable' class
     takes care of passing the arguments to the right subclass and also initializes the keras
@@ -89,11 +89,11 @@ def _make_trainable(cls: type[DoaEngine]) -> type[DoaEngine]:
     return TrainableDoaEngine
 
 
-def build_networks(names: tuple[str, ...], creator_funs: tuple[Callable[[...], keras.Model], ...], args_funs: tuple[dict[str, Any], ...]) -> dict[str, keras.Model]:
+def build_networks(names: Tuple[str, ...], creator_funs: Tuple[Callable[..., keras.Model], ...], args_funs: Tuple[Dict[str, Any], ...]) -> Dict[str, keras.Model]:
     return {name: create_model(**args) for name, create_model, args in zip(names, creator_funs, args_funs)}
 
 
-def create_deep_classic_music(configs: DoaConfig.Config | None = None, define_models: bool = True, kind: str = "ws") -> Engine[RetDoa]:
+def create_deep_classic_music(configs: Optional[DoaConfig.Config] = None, define_models: bool = True, kind: str = "ws") -> Engine[RetDoa]:
     """
 
     Parameters
@@ -112,33 +112,32 @@ def create_deep_classic_music(configs: DoaConfig.Config | None = None, define_mo
 
     """
 
-    defined_models         = None
-    model_names: list[str] = []
+    defined_models: Optional[Dict[str, keras.Model]] = None
+    model_names: List[str] = []
 
-    match kind:
+    # Replace match/case with if/elif/else
+    if kind == "sl":
+        model_names = ["surrogate", "selector", "finder"]
 
-        case "sl":
-            model_names = ["surrogate", "selector", "finder"]
+        if not define_models:
+            defined_models = build_networks(("surrogate", "finder", "selector"),
+                                            (build_surrogate, build_finder, build_selector),
+                                            ({"m_antennas":configs.base.array.antennas, "n_samples":configs.base.signal.n_samples},
+                                             {"scan_range":configs.base.scan_range, "m_antennas":configs.base.array.antennas, "d_sources":configs.base.d_sources},
+                                             {"m_antennas":configs.base.array.antennas},
+                                             ))
+        engine = _create_deep_music(configs, DeepClassicDOA, model_names, defined_models)
 
-            if not define_models:
-                defined_models = build_networks(("surrogate", "finder", "selector"),
-                                                (build_surrogate, build_finder, build_selector),
-                                                ({"m_antennas":configs.base.array.antennas, "n_samples":configs.base.signal.n_samples},
-                                                 {"scan_range":configs.base.scan_range, "m_antennas":configs.base.array.antennas, "d_sources":configs.base.d_sources},
-                                                 {"m_antennas":configs.base.array.antennas},
-                                                 ))
-            engine = _create_deep_music(configs, DeepClassicDOA, model_names, defined_models)
+    else:  # default case (ws)
+        model_names = ["surrogate", "finder"]
 
-        case _:
-            model_names = ["surrogate", "finder"]
-
-            if not define_models:
-                defined_models = build_networks(("surrogate", "finder"),
-                                                (build_surrogate, build_finder),
-                                                ({"m_antennas":configs.base.array.antennas, "n_samples":configs.base.signal.n_samples},
-                                                 {"scan_range":configs.base.scan_range, "m_antennas":configs.base.array.antennas, "d_sources":configs.base.d_sources},
-                                                 ))
-            engine = _create_deep_music(configs, DeepClassicDOA_WS, model_names, defined_models)
+        if not define_models:
+            defined_models = build_networks(("surrogate", "finder"),
+                                            (build_surrogate, build_finder),
+                                            ({"m_antennas":configs.base.array.antennas, "n_samples":configs.base.signal.n_samples},
+                                             {"scan_range":configs.base.scan_range, "m_antennas":configs.base.array.antennas, "d_sources":configs.base.d_sources},
+                                             ))
+        engine = _create_deep_music(configs, DeepClassicDOA_WS, model_names, defined_models)
 
 
     class StandardScaler:
@@ -182,7 +181,7 @@ def create_deep_classic_music(configs: DoaConfig.Config | None = None, define_mo
     return engine
 
 
-def create_deep_root_music(configs: DoaConfig.Config | None = None, define_models: bool = False, activation_value: float = 0.3) -> Engine[RetDoa]:
+def create_deep_root_music(configs: Optional[DoaConfig.Config] = None, define_models: bool = False, activation_value: float = 0.3) -> Engine[RetDoa]:
     """
 
     Parameters
@@ -197,14 +196,14 @@ def create_deep_root_music(configs: DoaConfig.Config | None = None, define_model
 
     """
 
-    defined_models = None
+    defined_models: Optional[Dict[str, keras.Model]] = None
     if define_models:
         defined_models = build_networks(("rcov",), (build_rcov,), ({"m_antennas":configs.base.array.antennas, "activation_value":activation_value},))
 
     return _create_deep_music(configs, DeepRootDOA,["rcov"], defined_models)
 
 
-def _create_deep_music(configs: DoaConfig.Config | None, cls: type[Recipe], model_names: list[str], defined_models: dict[str, keras.Model] | None) -> Engine[RetDoa]:
+def _create_deep_music(configs: Optional[DoaConfig.Config], cls: Type[Recipe], model_names: List[str], defined_models: Optional[Dict[str, keras.Model]]) -> Engine[RetDoa]:
     configs_load_save_path = 'configs'
     if configs is not None:
         configDecoder = JsonEncoderDecoder(configs)

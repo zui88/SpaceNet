@@ -2,7 +2,7 @@ from SpaceNet.Capabilities.configuration import Configuration
 from SpaceNet.Capabilities.deep_augment import DeepAugment
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar, TypeAlias, Union, Optional, Dict, Type
 
 import numpy as np
 
@@ -37,14 +37,15 @@ class DelayDoppler:
     doppler: np.ndarray
 
 
-type RetDoa = tuple[Doa, Any]
-type RetDD = tuple[DelayDoppler, Any]
+RetDoa: TypeAlias = tuple[Doa, Any]
+RetDD: TypeAlias = tuple[DelayDoppler, Any]
 
-type Capability = Any | DeepAugment
-type CapabilityRegistryType = dict[type[Capability], Capability]
+Capability: TypeAlias = Union[Any, DeepAugment]
+CapabilityRegistryType: TypeAlias = Dict[Type[Capability], Capability]
 
+T = TypeVar('T')
 
-class Engine[T](Protocol):
+class Engine(Protocol[T]):
     """
     Parameters
     ----------
