@@ -2,10 +2,11 @@
 Persist the configuration on the disk.
 Useful f.e. for Deep Augmented Approaches where the engine is trained by a certain configuration.
 """
-from typing import Protocol
+from typing import Protocol, TypeVar
 
+T = TypeVar("T")
 
-class Configuration[T](Protocol):
+class Configuration(Protocol[T]):
 
 
     def save(self, path: str):...

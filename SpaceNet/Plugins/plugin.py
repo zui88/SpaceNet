@@ -1,6 +1,6 @@
 from SpaceNet.Utils.id import ID
 from dataclasses import dataclass
-from typing import Protocol, Any
+from typing import Protocol, Any, TypeAlias
 
 
 @dataclass
@@ -8,7 +8,7 @@ class Link:
     value: Any = None
 
 
-type Ports = dict[ID, Link]
+Ports: TypeAlias = dict[ID, Link]
 
 
 class Plugin(Protocol):

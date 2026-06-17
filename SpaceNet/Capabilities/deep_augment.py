@@ -3,13 +3,13 @@ from SpaceNet.Utils.DeepAugmented.LossFunctions.loss import PermutatedLoss
 
 from tensorflow import keras
 
-from typing import Any, Protocol, Callable
+from typing import Any, Protocol, Callable, TypeAlias
 
 
-type ModelName = str
-type Dataset = Any
-type Percent = float
-type TransformerClass = type[Any]
+ModelName: TypeAlias = str
+Dataset: TypeAlias = Any
+Percent: TypeAlias = float
+TransformerClass: TypeAlias = type[Any]
 
 
 class DeepAugment(Protocol):

@@ -2,12 +2,13 @@
 Persist the configuration on the disk in JSON format.
 Useful f.e. for Deep Augmented Approaches where the engine is trained by a certain configuration.
 """
-from typing import overload
+from typing import overload, TypeVar, Generic
 
 import msgspec
 
+T = TypeVar("T")
 
-class JsonEncoderDecoder[T]:
+class JsonEncoderDecoder(Generic[T]):
 
 
     @overload

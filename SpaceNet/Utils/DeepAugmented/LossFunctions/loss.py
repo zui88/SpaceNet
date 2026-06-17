@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 
-def create_permutation_from_estimated_sources(predictions : tf.Tensor) -> Generator[tf.Tensor]:
+def create_permutation_from_estimated_sources(predictions : tf.Tensor) -> Generator:
     """
     Produce a permutational set of the predictions from k estimated sources.
 

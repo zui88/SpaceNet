@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, TypeAlias
 import numpy as np
 
 
-type SteeringType = Callable[[np.ndarray, int], np.ndarray] | Callable[[np.ndarray], np.ndarray]
+SteeringType: TypeAlias = Callable[[np.ndarray, int], np.ndarray] | Callable[[np.ndarray], np.ndarray]
 
 
 class ArrayGeometry(ABC):

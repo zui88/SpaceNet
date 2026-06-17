@@ -1,6 +1,6 @@
 from SpaceNet.Plugins.multiplexer import Multiplexer
 from SpaceNet.Plugins.plugin import Link
-from typing import Any
+from typing import Any, TypeAlias
 from SpaceNet.Plugins.plugin import Ports
 from SpaceNet.Plugins.plugin import Plugin
 from SpaceNet.Utils.id import ID
@@ -15,8 +15,8 @@ class Connection:
     target_port: ID
 
 
-type Nodes = dict[ID, Plugin]
-type Connections = list[Connection]
+Nodes: TypeAlias = dict[ID, Plugin]
+Connections: TypeAlias = list[Connection]
 
 
 class Graph:

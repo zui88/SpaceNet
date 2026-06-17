@@ -1,10 +1,13 @@
 from SpaceNet.Configs import deep_augmented
 from SpaceNet.Configs import base
+
+from typing import TypeAlias
+
 from msgspec import Struct, field
 
 
-type BaseConfig = base.Config
-type DeepAugmentedConfig = deep_augmented.Config
+BaseConfig: TypeAlias = base.Config
+DeepAugmentedConfig: TypeAlias = deep_augmented.Config
 
 
 class Config(Struct, frozen=True):

@@ -1,1 +1,4 @@
-type ID = str
+from typing import TypeAlias
+
+
+ID: TypeAlias = str
