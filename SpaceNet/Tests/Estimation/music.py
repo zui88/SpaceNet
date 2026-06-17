@@ -1,4 +1,6 @@
-from generator import DOASignalSynthesizer, RandomSignal, ULAArray
+from SpaceNet.Synthesizer.synthesizer import DOASignalSynthesizer
+from SpaceNet.Synthesizer.signal import RandomSignal
+from SpaceNet.Synthesizer.geometry import ULAArray
 from SpaceNet.Configs.Doa.config import Config as DoaConfig
 from SpaceNet.Engines.engine import Engine, RetDoa, Doa
 from SpaceNet.Builders.doa import create_classic_music

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Callable
 import numpy as np
+import tensorflow as tf
 
 
 type SteeringType = Callable[[np.ndarray, int], np.ndarray] | Callable[[np.ndarray], np.ndarray]
@@ -17,7 +18,7 @@ class ArrayGeometry(ABC):
         self.antennas = antennas
 
     @abstractmethod
-    def get_steering(self, thetas: np.ndarray, axis: int = 0) -> np.ndarray:
+    def get_steering(self, thetas: tf.Tensor, axis: int = 0) -> tf.Tensor:
         pass
 
     @property
@@ -32,21 +33,35 @@ class ULAArray(ArrayGeometry):
         super().__init__(*args, **kwargs)
         self.d_lambda = d_lambda
 
-    def get_steering(self, thetas: np.ndarray, axis: int = 0) -> np.ndarray:
-        """
-        steering/mode vectors for "standard ULA"
 
-        A.shape() = (antennas x sources) for axis == 0
-        A.shape() = (sources x antennas) for axis == 1
+    def get_steering(
+        self,
+        thetas: tf.Tensor,
+        axis: int = 0,
+    ) -> tf.Tensor:
         """
-        if len(thetas) < 1:
-            raise RuntimeError("thetas must be at least has the size of 1")
+        A.shape = (antennas, sources) for axis == 0
+        A.shape = (sources, antennas) for axis == 1
+        """
 
-        antennas_idx = np.arange(self.m_antennas)[:, None]
-        A = np.exp(1j * np.pi * self.d_lambda * np.sin(thetas) * antennas_idx)  # broadcast sin with numbers of antennas
+        thetas = tf.convert_to_tensor(thetas, dtype=tf.float32)
+
+        antennas_idx = tf.cast(
+            tf.range(self.m_antennas)[:, None],
+            tf.float32,
+        )
+
+        A = tf.exp(
+            tf.complex(
+                tf.zeros_like(
+                    antennas_idx * tf.sin(thetas)
+                ),
+                np.pi * self.d_lambda * antennas_idx * tf.sin(thetas),
+            )
+        )
 
         if axis == 1:
-            A = A.T
+            A = tf.transpose(A)
 
         return A
 

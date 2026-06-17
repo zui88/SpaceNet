@@ -42,7 +42,7 @@ class ClassicDOA(Recipe):
         self.connect_node("input", "r_sensed",
                           "estimated_rcov", "r_sensed")
 
-        self.connect_node("estimated_rcov", "rcov",
+        self.connect_node("estimated_rcov", "r_cov",
                           "evd", "rcov")
         self.connect_node("evd", "eigs",
                           "signal_sources", "eigs")

@@ -25,20 +25,16 @@ class EVD(Plugin):
 
 
     def execute(self) -> None:
-        r_hat         = self.input_ports["rcov"].value
-        eigsv_batched = []
-        eigs_batched  = []
+        r_hat = self.input_ports["rcov"].value
 
-        for cov in r_hat.cov_batch:
-            # if there is a guaranty that cov is hermitian then 'eigh' could be applied
-            eigs, eigsv = tf.linalg.eigh(cov)
-            idx         = tf.keras.ops.argsort(tf.abs(eigs))[::-1]
-            eigs_batched.append(tf.gather(eigs, idx))
-            eigsv_batched.append(tf.gather(eigsv, idx, axis=1))
+        eigs, eigsv = tf.linalg.eigh(r_hat.cov_batch)
+        idx         = tf.argsort(tf.abs(eigs), axis=1, direction="DESCENDING")
+        eigs        = tf.gather(eigs, idx, batch_dims=1)
+        eigsv       = tf.gather(eigsv, idx, axis=2, batch_dims=1)
 
-        self.output_ports["eigsv"].value = tf.stack(eigsv_batched)
+        self.output_ports["eigsv"].value = eigsv
         self.output_ports["eigs"].value  = Eigs(
-            tf.stack(eigs_batched),
+            eigs,
             r_hat.n_samples_batch,
             r_hat.m_sensors_batch,
         )

@@ -34,7 +34,7 @@ class EstimateRcov(Plugin):
             n_samples_batch.append(n_samples)
             n_sensors_batch.append(n_sensors)
 
-        self.output_ports["r_hat"].value = Rxx(
+        self.output_ports["r_cov"].value = Rxx(
             tf.stack(cov_batched),
             tf.convert_to_tensor(n_samples_batch),
             tf.convert_to_tensor(n_sensors_batch),

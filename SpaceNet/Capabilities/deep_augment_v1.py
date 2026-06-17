@@ -123,7 +123,7 @@ class DeepAugmentV1:
         self.engine.compile(
             optimizer=optimizer,
             loss=loss,
-            run_eagerly=True,
+            run_eagerly=False,
         )
 
         callbacks = [

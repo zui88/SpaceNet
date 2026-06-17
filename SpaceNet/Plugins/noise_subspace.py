@@ -6,20 +6,20 @@ from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 class NoiseSubspace(Plugin):
 
 
-    def __init__(self):
+    def __init__(self, d_sources: int | None = None) -> None:
         self.input_ports: Ports = {
             "eigsv": Link(),
             "k_est": Link(),
         }
         self.output_ports: Ports = {"Un": Link()}
+        self.d_sources           = d_sources
 
 
     def execute(self) -> None:
-        eigsv_batched = self.input_ports["eigsv"].value
-        k_est_batched = self.input_ports["k_est"].value
-        Un_batched    = []
+        eigsv = self.input_ports["eigsv"].value
+        k_est = self.input_ports["k_est"].value[0] if self.d_sources is None else self.d_sources
 
-        for eigsv, k_est in zip(eigsv_batched, k_est_batched):
-            Un_batched.append(eigsv[:, int(k_est.numpy()):])
+        # todo varying signal sources aren't supported right now
+        Un = eigsv[:, :, k_est:]
 
-        self.output_ports["Un"].value = tf.stack(Un_batched)
+        self.output_ports["Un"].value = Un

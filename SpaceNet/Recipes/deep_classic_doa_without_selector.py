@@ -37,8 +37,7 @@ class DeepClassicDOA(Recipe):
             self.eps_rcov,
         ))
         self.register_node("evd", EVD())
-        self.register_node("signal_sources", SignalSources(self.d_sources, False))
-        self.register_node("noise_subspace", NoiseSubspace())
+        self.register_node("noise_subspace", NoiseSubspace(d_sources))
         self.register_node("inv_spec", ComputePseudoInverseSpectrum(
             self.scan_range,
             self.steering,
@@ -55,11 +54,6 @@ class DeepClassicDOA(Recipe):
 
         self.connect_node("evd", "eigsv",
                           "noise_subspace", "eigsv")
-        self.connect_node("evd", "eigs",
-                          "signal_sources", "eigs")
-
-        self.connect_node("signal_sources", "k_est",
-                          "noise_subspace", "k_est")
 
         self.connect_node("noise_subspace", "Un",
                           "inv_spec", "Un")
