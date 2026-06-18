@@ -4,10 +4,12 @@ from SpaceNet.Utils.DeepAugmented.LossFunctions.rmspe_loss import RMSPELoss
 from SpaceNet.Engines.engine import Engine
 
 from typing import Callable
-from tensorflow import keras
 from pathlib import Path
 from typing import Any
 import inspect
+
+from tensorflow import keras
+import tensorflow as tf
 
 
 class EngineType(keras.Model, Engine):...
@@ -75,13 +77,14 @@ class DeepAugmentV1:
                      output_data: Dataset,
                      validation_data: tuple[Dataset, Dataset] | None = None,
                      freezing_layers: tuple[bool, ...] | None = None,
+                     debuggable: bool = False,
                      epochs: int = 200,
                      batch_size: int = 32,
                      learning_rate: float = 0.0001,
                      patience: int | None = None,
                      factor: float = 0.25,
                      loss: PermutatedLoss = RMSPELoss()
-    ) -> keras.callbacks.History:
+                     ) -> keras.callbacks.History:
         """
 
         Parameters
@@ -93,6 +96,7 @@ class DeepAugmentV1:
         output_data
         validation_data
         freezing_layers
+        debuggable
         epochs
         batch_size
 
@@ -120,10 +124,11 @@ class DeepAugmentV1:
             weight_decay=1e-9,
         )
 
+        if debuggable: tf.config.run_functions_eagerly(True)
         self.engine.compile(
             optimizer=optimizer,
             loss=loss,
-            run_eagerly=False,
+            run_eagerly=debuggable,
         )
 
         callbacks = [

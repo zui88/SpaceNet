@@ -1,4 +1,4 @@
-from SpaceNet.Utils.DeepAugmented.TrainingData.doa import generate_training_set
+from SpaceNet.Utils.DeepAugmented.TrainingData.doa import generate_data_set
 from SpaceNet.Utils.DeepAugmented.print import save_print_history
 from SpaceNet.Builders.doa import create_deep_classic_music
 from SpaceNet.Capabilities.deep_augment import DeepAugment
@@ -14,26 +14,26 @@ def train():
     config.base.array.antennas   = 8
     config.base.snr_db           = (-5, 30)
 
-    R, doa = generate_training_set(
+    R, doa = generate_data_set(
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,
-        doa_range_deg=(-70.0, 70.0),
-        min_doa_spacing=5, # 15 grad guy
-        training_examples=100_000,
+        deg_range=(-70.0, 70.0),
+        min_spacing=5, # 15 grad guy
+        samples=100_000,
         max_signal_sources=config.base.d_sources,
         snr_db=config.base.snr_db,
     )
     R_train, R_test, doa_train, doa_test = train_test_split(R, doa, test_size=0.12, random_state=42)
 
-    model                            = create_deep_classic_music(config, False)
+    model                            = create_deep_classic_music(config, define_models=True)
     history: keras.callbacks.History = model.capability_registry[DeepAugment].train_models(
         R_train,
         doa_train,
         (R_test, doa_test),
         batch_size=100,
-        epochs=200,
+        epochs=100,
         learning_rate=0.001,
-        patience=10,
+        patience=8,
     )
 
     model.capability_registry[DeepAugment].save_models()
@@ -41,4 +41,6 @@ def train():
 
 
 if __name__ == "__main__":
+    import os
+    print(os.getcwd())
     train()

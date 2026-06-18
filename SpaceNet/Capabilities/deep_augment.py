@@ -63,6 +63,7 @@ class DeepAugment(Protocol):
                      output_data: Dataset,
                      validation_data: tuple[Dataset, Dataset] | None = None,
                      freezing_layers: tuple[bool, ...] | None = None,
+                     debuggable: bool = False,
                      epochs: int = 200,
                      batch_size: int = 32,
                      learning_rate: float = 0.0001,

@@ -1,3 +1,4 @@
+from SpaceNet.Utils.DeepAugmented.TrainingData.doa import generate_data_set
 from SpaceNet.Utils.DeepAugmented.LossFunctions.rmspe_loss import RMSPELoss
 from SpaceNet.Synthesizer.synthesizer import DOASignalSynthesizer
 from SpaceNet.Builders.doa import create_deep_classic_music
@@ -14,25 +15,34 @@ def doa():
     ##################################################
     # generate the signal
     ##################################################
-    thetas = np.deg2rad([63, -17, 4, -46])
-
-    r_sensed = DOASignalSynthesizer(
-        array_geometry=config.base.array_geometry,
+    R, doa = generate_data_set(
         signal_generator=config.base.signal_provider,
-        snr_db=config.base.snr_db,
-    ).generate(
-        thetas,
+        array_geometry=config.base.array_geometry,
+        deg_range=(-70.0, 70.0),
+        min_spacing=5, # 15 grad guy
+        samples=5,
+        max_signal_sources=config.base.d_sources,
+        snr_db=30,
     )
-    print("true thetas: ", np.rad2deg(thetas))
+
+    print("true thetas: ", np.rad2deg(doa))
 
     ##################################################
     # deep augmented classic music engine
     ##################################################
-    doa_ret: RetDoa = deep_music_engine.estimate(r_sensed=r_sensed[None, :])
+    doa_ret: RetDoa = deep_music_engine.estimate(r_sensed=R)
     doa_result: Doa = doa_ret[0]
-    print("deep augmented classic music: ", np.rad2deg(doa_result.thetas[0]))
-    print("loss: ", RMSPELoss().call(thetas[None,:], doa_result.thetas).numpy())
+    print("deep augmented classic music: ", np.rad2deg(doa_result.thetas))
+
+    rmspe      = RMSPELoss()
+    loss_array = rmspe.loss(doa, doa_result._thetas)
+    loss_mean  = np.mean(loss_array)
+    print(f"loss array {loss_array}")
+    print(f"loss mean: {loss_mean}")
 
 
 if __name__ == "__main__":
+    import os
+    os.chdir('./Estimation')
+    print(os.getcwd())
     doa()

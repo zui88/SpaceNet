@@ -57,15 +57,15 @@ def _generate_checked_matrix(
     return doa_deg_set[:, np.newaxis, :]
 
 
-def generate_training_set(
+def generate_data_set(
         signal_generator,
         array_geometry= None,
-        training_examples: int = 1_000,
+        samples: int = 1_000,
         max_signal_sources: int = 4,
         min_signal_sources: int | None = None,
         snr_db: tuple[float, float] | float = 30.0,
-        doa_range_deg: tuple[float, float] = (-70.0, 70.0),
-        min_doa_spacing: float = 7.5,
+        deg_range: tuple[float, float] = (-70.0, 70.0),
+        min_spacing: float | int = 7.5,
         seed: int | None = 42,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """
@@ -74,12 +74,12 @@ def generate_training_set(
     ----------
     signal_generator
     array_geometry
-    training_examples
+    samples
     max_signal_sources
     min_signal_sources
     snr_db
-    doa_range_deg
-    min_doa_spacing
+    deg_range
+    min_spacing
         the space between signal sources in one measurement
 
     seed
@@ -89,11 +89,11 @@ def generate_training_set(
 
     """
 
-    doa_low, doa_high = doa_range_deg
+    doa_low, doa_high = deg_range
     if doa_low > doa_high:
         raise ValueError("low must be <= high.")
 
-    if training_examples <= 0:
+    if samples <= 0:
         raise ValueError("n_examples must be > 0.")
     if max_signal_sources <= 0:
         raise ValueError("max_signal_sources must be > 0.")
@@ -113,21 +113,21 @@ def generate_training_set(
     if array_geometry is None:
         array_geometry = ULAArray()
 
-    if (max_signal_sources - 1) * min_doa_spacing > (doa_high - doa_low):
+    if (max_signal_sources - 1) * min_spacing > (doa_high - doa_low):
         raise ValueError("Requested minimum spacing is impossible.")
 
     rng         = np.random.default_rng(seed)
     doa_deg_set = _generate_checked_matrix(
-            training_examples,
+            samples,
             max_signal_sources,
             doa_low,
             doa_high,
-            min_doa_spacing,
+            min_spacing,
             rng,
         )
     doa_rad_set = np.vectorize(np.deg2rad)(doa_deg_set)
 
-    if type(snr_db) is float:
+    if type(snr_db) is float or type(snr_db) is int:
         synthesizer = DOASignalSynthesizer(
             array_geometry=array_geometry,
             signal_generator=signal_generator,
@@ -145,4 +145,4 @@ def generate_training_set(
 
     signal_set = np.array(list(map(generate_signals, doa_rad_set)))
 
-    return signal_set, np.reshape(doa_rad_set, (training_examples, max_signal_sources))
+    return signal_set, np.reshape(doa_rad_set, (samples, max_signal_sources))

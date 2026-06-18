@@ -1,7 +1,9 @@
 from SpaceNet.Synthesizer.signal import SignalGenerator, ObservationContext
-from SpaceNet.Synthesizer.geometry import ArrayGeometry
 from SpaceNet.Configs.DelayDoppler.config import Config as DDConfig
+from SpaceNet.Synthesizer.geometry import ArrayGeometry
+
 from abc import ABC, abstractmethod
+
 import numpy as np
 
 

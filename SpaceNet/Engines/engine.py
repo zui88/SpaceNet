@@ -1,4 +1,3 @@
-from SpaceNet.Capabilities.configuration import Configuration
 from SpaceNet.Capabilities.deep_augment import DeepAugment
 
 from dataclasses import dataclass
@@ -31,10 +30,19 @@ class Doa:
         self._thetas = thetas
 
 
+    @property
+    def raw(self) -> np.ndarray:
+        return self._thetas
+
+
 @dataclass(frozen=True, slots=True)
 class DelayDoppler:
     delay: np.ndarray
     doppler: np.ndarray
+
+
+    @property
+    def raw(self) -> np.ndarray:...
 
 
 type RetDoa = tuple[Doa, Any]
