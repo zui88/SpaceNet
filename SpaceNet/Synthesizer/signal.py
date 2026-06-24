@@ -6,15 +6,16 @@ import numpy as np
 class SignalGenerator(ABC):
 
     
-    def __init__(self, n_samples : int = None, T : float = 1, fs : int = 50):
+    def __init__(self, n_samples : int | None = None, T : float = 1, fs : int = 50):
         """
         PARAMETER
         ---------
-        n_samples : int
-            when n_samples is explicitly specified fs and T are ignored when the signal is produced
+        n_samples : int | None
+            when n_samples is explicitly specified fs and T are ignored when the signal is produced.  'n_samples' is used in DOA cases not for Delay Doppler (DD) Estimation.
+            In DD Estimation the sample space is constructed with the sample frequency 'fs' and with T of the observation window (observation context).
 
         T : float
-            pulse lenght
+            pulse length
 
         fs : float
             frequency to which the signal is sampled

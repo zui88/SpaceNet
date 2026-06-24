@@ -1,8 +1,11 @@
-from pathlib import Path
-from generator import DOASignalSynthesizer, RandomSignal, ULAArray
+from SpaceNet.Synthesizer.synthesizer import DOASignalSynthesizer
+from SpaceNet.Synthesizer.signal import RandomSignal
+from SpaceNet.Synthesizer.geometry import ULAArray
 from SpaceNet.Configs.Doa.config import Config as DoaConfig
 from SpaceNet.Engines.engine import RetDoa, Engine, Doa
 from SpaceNet.Builders.doa import create_deep_root_music
+
+from pathlib import Path
 
 import numpy as np
 

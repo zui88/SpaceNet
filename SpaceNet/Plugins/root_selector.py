@@ -17,10 +17,10 @@ class RootSelector(Plugin):
 
     def execute(self) -> None:
         roots_batched = self.input_ports["roots"].value
-        k_est_batched = self.input_ports["k_est"].value
+        d_est_batched = self.input_ports["d_est"].value
         selected_roots_batched = []
 
-        for roots, k_est in zip(roots_batched, k_est_batched):
+        for roots, k_est in zip(roots_batched, d_est_batched):
             k_est = int(k_est.numpy())
             if k_est <= 0:
                 selected_roots_batched.append(roots[:0])

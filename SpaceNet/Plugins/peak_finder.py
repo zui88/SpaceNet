@@ -9,14 +9,14 @@ class PeakFinder(Plugin):
     def __init__(self):
         self.input_ports: Ports = {
             "spectrum": Link(),
-            "k_est": Link(),
+            "d_est": Link(),
         }
         self.output_ports: Ports = {"peaks": Link()}
 
 
     def execute(self) -> None:
         spectrum_batched  = self.input_ports["spectrum"].value
-        k_est_batched     = self.input_ports["k_est"].value
+        k_est_batched     = self.input_ports["d_est"].value
         top_peaks_batched = []
 
         for spectrum, k_est in zip(spectrum_batched, k_est_batched):

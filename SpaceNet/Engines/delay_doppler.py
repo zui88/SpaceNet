@@ -1,3 +1,5 @@
+from SpaceNet.Capabilities.deep_augment import DeepAugment, ModelName
+from SpaceNet.Recipes.deep_delay_doppler import DeepDelayDoppler
 from SpaceNet.Recipes.classic_delay_doppler import ClassicDelayDoppler
 from SpaceNet.Utils.decorators import static_vars
 from SpaceNet.Engines.engine import CapabilityRegistryType, DelayDoppler
@@ -7,6 +9,8 @@ from SpaceNet.Recipes.recipe import Recipe
 
 from typing import Callable
 
+from tensorflow import keras
+
 
 class DelayDopperEngine(Engine[RetDD]):
 
@@ -15,10 +19,11 @@ class DelayDopperEngine(Engine[RetDD]):
         self.recipe: Recipe | None = None
         self.capability_registry: CapabilityRegistryType = {}
         self.recipe_cls: type[Recipe] = recipe_cls
-        self.config = config
+        self.config: DDConfig = config
 
         self.dispatcher: dict[type[Recipe], Callable[[], Recipe]] = {
             ClassicDelayDoppler: self._construct_classic_dd,
+            DeepDelayDoppler: self._construct_da_dd,
         }
 
 
@@ -34,6 +39,27 @@ class DelayDopperEngine(Engine[RetDD]):
             self.recipe = self.dispatcher[self.recipe_cls]()
         except KeyError as e:
             raise NotImplementedError(f"Recipe not registered for dispatching: {e}")
+
+
+    def _construct_da_dd(self) -> Recipe:
+        da_capability                                      = self.capability_registry[DeepAugment]
+        models: dict[ModelName, keras.models.Model] | None = da_capability.get_models()
+        if models is None:
+            raise NotImplementedError("no models registered yet")
+
+        d_sources = self.config.base.d_sources
+        if d_sources is not None:
+            return DeepDelayDoppler(
+                d_sources,
+                self.config.base.scan_range,
+                self.config.base.signal_provider,
+                self.config.observ_ctx,
+                models["surrogate"],
+                models["finder"],
+                self.config.deep_augmented.eps_rcov,
+            )
+        else:
+            raise NotImplementedError("d_sources not specified, inference not supported")
 
 
     def _construct_classic_dd(self) -> Recipe:
@@ -53,7 +79,9 @@ class DelayDopperEngine(Engine[RetDD]):
     def estimate(self, **inputs) -> RetDD:
         if self.recipe is not None:
             result = self.recipe.run(r_sensed=inputs["r_sensed"])
-            return DelayDoppler(result["tau_est"], result["omega_est"]), result
+            # todo
+            #return DelayDoppler(result["tau_est"], result["omega_est"]), result
+            return DelayDoppler(result["tau_est"]), result
         else:
             if DelayDopperEngine.estimate.tries < 5:
                 DelayDopperEngine.estimate.tries += 1

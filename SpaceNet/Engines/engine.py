@@ -38,11 +38,13 @@ class Doa:
 @dataclass(frozen=True, slots=True)
 class DelayDoppler:
     delay: np.ndarray
-    doppler: np.ndarray
+    # todo
+    #doppler: np.ndarray
 
 
     @property
-    def raw(self) -> np.ndarray:...
+    def raw(self) -> np.ndarray:
+        return self.delay
 
 
 type RetDoa = tuple[Doa, Any]

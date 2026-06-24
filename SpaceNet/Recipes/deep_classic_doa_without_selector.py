@@ -1,5 +1,5 @@
 from SpaceNet.Plugins.deep_estimated_rcov import DeepEstimateRcov
-from SpaceNet.Plugins.deep_peak_finder import DeepPeakFinder
+from SpaceNet.Plugins.deep_peak_finder import DeepPeakConverter
 from SpaceNet.Plugins.evd import EVD
 from SpaceNet.Plugins.noise_subspace import NoiseSubspace
 from SpaceNet.Plugins.pseudo_inverse_spectrum import ComputePseudoInverseSpectrum
@@ -25,35 +25,34 @@ class DeepClassicDOA(Recipe):
 
         super().__init__()
 
-        self.steering       = steering
-        self.d_sources      = d_sources
-        self.scan_range     = scan_range
-        self.rcov_network   = surrogate_network
-        self.finder_network = finder_network
-        self.eps_rcov       = eps
-
+        #############################################
+        # register the plugins
+        #############################################
         self.register_node("estimated_rcov", DeepEstimateRcov(
-            self.rcov_network,
-            self.eps_rcov,
+            surrogate_network,
+            eps,
         ))
         self.register_node("evd", EVD())
         self.register_node("noise_subspace", NoiseSubspace(d_sources))
         self.register_node("inv_spec", ComputePseudoInverseSpectrum(
-            self.scan_range,
-            self.steering,
+            scan_range,
+            steering,
         ))
-        self.register_node("peak_finder", DeepPeakFinder(
-            self.finder_network,
+        self.register_node("peak_finder", DeepPeakConverter(
+            finder_network,
         ))
 
+        #############################################
+        # connect the plugins
+        #############################################
         self.connect_node("input", "r_sensed",
                           "estimated_rcov", "r_sensed")
 
         self.connect_node("estimated_rcov", "surrogate_rcov",
-                          "evd", "rcov")
+                          "evd", "r_cov")
 
-        self.connect_node("evd", "eigsv",
-                          "noise_subspace", "eigsv")
+        self.connect_node("evd", "eigs_v",
+                          "noise_subspace", "eigs_v")
 
         self.connect_node("noise_subspace", "Un",
                           "inv_spec", "Un")
@@ -61,7 +60,7 @@ class DeepClassicDOA(Recipe):
         self.connect_node("inv_spec", "spectrum",
                           "peak_finder", "spectrum")
 
-        self.connect_node("peak_finder", "doa",
+        self.connect_node("peak_finder", "value",
                           "output", "doa")
-        self.connect_node("inv_spec", "SpectrumObj",
-                          "output", "SpectrumObj")
+        self.connect_node("inv_spec", "spectrum_obj",
+                          "output", "spectrum_obj")

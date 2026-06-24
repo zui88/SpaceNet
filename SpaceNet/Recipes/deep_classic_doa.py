@@ -1,6 +1,6 @@
 from SpaceNet.Plugins.deep_estimated_rcov import DeepEstimateRcov
 from SpaceNet.Plugins.deep_noise_subspace import DeepNoiseSubspace
-from SpaceNet.Plugins.deep_peak_finder import DeepPeakFinder
+from SpaceNet.Plugins.deep_peak_finder import DeepPeakConverter
 from SpaceNet.Plugins.evd import EVD
 from SpaceNet.Plugins.pseudo_inverse_spectrum import ComputePseudoInverseSpectrum
 from SpaceNet.Recipes.recipe import Recipe
@@ -43,16 +43,16 @@ class DeepClassicDOA(Recipe):
             self.scan_range,
             self.steering,
         ))
-        self.register_node("peak_finder", DeepPeakFinder(
+        self.register_node("peak_finder", DeepPeakConverter(
             self.finder_network,
         ))
 
         self.connect_node("input", "r_sensed",
                           "estimated_rcov", "r_sensed")
         self.connect_node("estimated_rcov", "surrogate_rcov",
-                          "evd", "rcov")
-        self.connect_node("evd", "eigsv",
-                          "noise_subspace", "eigsv")
+                          "evd", "r_cov")
+        self.connect_node("evd", "eigs_v",
+                          "noise_subspace", "eigs_v")
         self.connect_node("evd", "eigs",
                           "noise_subspace", "eigs")
         self.connect_node("noise_subspace", "Un",
@@ -60,7 +60,7 @@ class DeepClassicDOA(Recipe):
         self.connect_node("inv_spec", "spectrum",
                           "peak_finder", "spectrum")
 
-        self.connect_node("peak_finder", "doa",
+        self.connect_node("peak_finder", "value",
                           "output", "doa")
-        self.connect_node("inv_spec", "SpectrumObj",
-                          "output", "SpectrumObj")
+        self.connect_node("inv_spec", "spectrum_obj",
+                          "output", "spectrum_obj")

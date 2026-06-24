@@ -1,5 +1,6 @@
-from SpaceNet.Configs import deep_augmented
-from SpaceNet.Configs import base
+from .. import deep_augmented
+from .. import base
+
 from msgspec import Struct, field
 
 

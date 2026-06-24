@@ -1,7 +1,7 @@
+from SpaceNet.Plugins.plugin import Link, Plugin, Ports
+
 from operator import add, mul, sub
 from typing import Callable, Any
-
-from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 
 
 class BinaryOperation(Plugin):

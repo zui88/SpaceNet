@@ -34,20 +34,20 @@ class RootDOA(Recipe):
 
         self.connect_node("input", "r_sensed",
                           "estimated_rcov", "r_sensed")
-        self.connect_node("estimated_rcov", "r_hat",
-                          "evd", "r_hat")
+        self.connect_node("estimated_rcov", "r_cov",
+                          "evd", "r_cov")
         self.connect_node("evd", "eigs",
                           "signal_sources", "eigs")
-        self.connect_node("evd", "eigsv",
-                          "noise_subspace", "eigsv")
-        self.connect_node("signal_sources", "k_est",
-                          "noise_subspace", "k_est")
+        self.connect_node("evd", "eigs_v",
+                          "noise_subspace", "eigs_v")
+        self.connect_node("signal_sources", "d_est",
+                          "noise_subspace", "d_est")
         self.connect_node("noise_subspace", "Un",
                           "root_spec", "Un")
         self.connect_node("root_spec", "roots",
                           "root_selector", "roots")
-        self.connect_node("signal_sources", "k_est",
-                          "root_selector", "k_est")
+        self.connect_node("signal_sources", "d_est",
+                          "root_selector", "d_est")
         self.connect_node("root_selector", "roots",
                           "doa", "roots")
 

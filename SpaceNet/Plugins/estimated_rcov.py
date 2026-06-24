@@ -16,15 +16,15 @@ class EstimateRcov(Plugin):
 
 
     def __init__(self):
-        self.input_ports: Ports = {"r_sensed": Link()}
+        self.input_ports: Ports  = {"r_sensed": Link()}
         self.output_ports: Ports = {"r_cov": Link()}
 
 
     def execute(self) -> None:
-        r_batched = tf.convert_to_tensor(self.input_ports["r_sensed"].value)
+        r_batched               = tf.convert_to_tensor(self.input_ports["r_sensed"].value)
         _, n_sensors, n_samples = r_batched.shape
 
-        cov_batched = []
+        cov_batched     = []
         n_samples_batch = []
         n_sensors_batch = []
 

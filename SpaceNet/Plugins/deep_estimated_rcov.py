@@ -1,8 +1,8 @@
-from SpaceNet.Plugins.estimated_rcov import Rxx
 from SpaceNet.Plugins.plugin import Link, Plugin, Ports
+from SpaceNet.Plugins.estimated_rcov import Rxx
 
-import tensorflow as tf
 from tensorflow import keras
+import tensorflow as tf
 
 
 class DeepEstimateRcov(Plugin):
@@ -28,8 +28,8 @@ class DeepEstimateRcov(Plugin):
         surrogate = self.rcov_network(X)
 
 
-        batch_size = surrogate.shape[0]
-        n_sensors  = surrogate.shape[-1]
+        batch_size = tf.shape(surrogate)[0]
+        n_sensors  = tf.shape(surrogate)[-1]
         split      = n_sensors
         cov_real   = surrogate[:, :split, :]
         cov_imag   = surrogate[:, split:, :]

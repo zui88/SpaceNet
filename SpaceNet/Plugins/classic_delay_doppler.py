@@ -1,4 +1,4 @@
-from SpaceNet.Utils.tensorflow_ports import gradient, eigh
+from SpaceNet.Utils.tf_np_ports import gradient, eigh
 from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 
 import numpy as np
@@ -21,8 +21,8 @@ class ClassicDelayDoppler(Plugin):
             "cost_function": Link(),
             }
 
-        self.d_sources = d_sources
-        self.observ_ctx = observ_ctx
+        self.d_sources       = d_sources
+        self.observ_ctx      = observ_ctx
         self.signal_provider = signal_provider
 
 

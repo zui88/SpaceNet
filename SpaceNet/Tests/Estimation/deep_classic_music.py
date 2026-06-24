@@ -1,6 +1,5 @@
 from SpaceNet.Utils.DeepAugmented.TrainingData.doa import generate_data_set
 from SpaceNet.Utils.DeepAugmented.LossFunctions.rmspe_loss import RMSPELoss
-from SpaceNet.Synthesizer.synthesizer import DOASignalSynthesizer
 from SpaceNet.Builders.doa import create_deep_classic_music
 from SpaceNet.Engines.engine import RetDoa, Engine, Doa
 from SpaceNet.Configs.Doa.config import Config
@@ -42,7 +41,4 @@ def doa():
 
 
 if __name__ == "__main__":
-    import os
-    os.chdir('./Estimation')
-    print(os.getcwd())
     doa()

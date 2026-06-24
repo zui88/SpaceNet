@@ -47,7 +47,6 @@ class DoaEngine(Engine[RetDoa]):
             raise NotImplementedError(f"Recipe not registered for dispatching: {e}")
 
 
-
     def _construct_deep_classic_doa_ws(self) -> Recipe:
         models = self.capability_registry[DeepAugment].get_models()
         if models is None:
@@ -101,7 +100,6 @@ class DoaEngine(Engine[RetDoa]):
             eps_rcov=self.deep_config.eps_rcov,
             eps_roots=self.deep_config.eps_roots,
         )
-
 
 
     def _construct_classic(self) -> Recipe:

@@ -34,7 +34,7 @@ class Config(Struct):
     d_sources: int | None = None
     inference_mode: bool = True
     snr_db: float | tuple[float, float] = 30.0
-    array: Array = field(default_factory=Array)
+    array: Array   = field(default_factory=Array)
     signal: Signal = field(default_factory=Signal)
 
 

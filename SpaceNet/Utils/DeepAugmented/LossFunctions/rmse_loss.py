@@ -7,8 +7,8 @@ class RMSELoss(PermutatedLoss):
     """
 
 
-    def __init__(self, gain: float = 1):
-        super().__init__()
+    def __init__(self, gain: float = 1, **kwargs):
+        super().__init__(**kwargs)
         self.gain = gain
 
 

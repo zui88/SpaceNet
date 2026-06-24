@@ -32,7 +32,7 @@ class ComputePseudoInverseSpectrum(Plugin):
 
         self.input_ports: Ports  = {"Un": Link()}
         self.output_ports: Ports = {"spectrum": Link(),
-                                    "SpectrumObj": Link()}
+                                    "spectrum_obj": Link()}
 
 
     def execute(self):
@@ -52,5 +52,5 @@ class ComputePseudoInverseSpectrum(Plugin):
         projection = tf.matmul(Un, a, adjoint_a=True)
         spectrum   = 1 / tf.reduce_sum(tf.abs(projection)**2, axis=1)
 
-        self.output_ports["spectrum"].value    = spectrum
-        self.output_ports["SpectrumObj"].value = Spectrum(spectrum, scan_range)
+        self.output_ports["spectrum"].value     = spectrum
+        self.output_ports["spectrum_obj"].value = Spectrum(spectrum, scan_range)

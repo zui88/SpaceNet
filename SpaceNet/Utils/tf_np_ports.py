@@ -63,31 +63,36 @@ def _generalized_eigh_scipy_compatible(A, B, eps=1e-12):
     return eigvals, V
 
 
-def _fix_phase_scipy(V, tol=1e-12):
-    """
-    Match SciPy/LAPACK phase convention:
-    first non-zero element is real and positive
-    """
-    V_out = []
+@tf.function
+def _fix_phase_scipy(V: tf.Tensor, tol: float = 1e-12) -> tf.Tensor:
+    abs_V = tf.abs(V)
+    mask = abs_V > tol
 
-    for i in range(V.shape[1]):
-        v = V[:, i]
+    first_nonzero_idx = tf.argmax(
+        tf.cast(mask, tf.int32),
+        axis=0,
+        output_type=tf.int32,
+    )
 
-        # find first non-zero index deterministically
-        abs_v = tf.abs(v)
-        mask = abs_v > tol
+    n_cols = tf.shape(V)[1]
+    col_idx = tf.range(n_cols, dtype=tf.int32)
 
-        # convert to python index safely
-        idx = int(tf.argmax(tf.cast(mask, tf.int32)))
+    pivots = tf.gather_nd(
+        V,
+        tf.stack([first_nonzero_idx, col_idx], axis=1),
+    )
 
-        pivot = v[idx]
+    tol_real = tf.cast(tol, V.dtype.real_dtype)
+    phases = pivots / (tf.abs(pivots) + tol_real)
 
-        phase = pivot / (tf.abs(pivot) + tol)
-        v_fixed = v / phase
+    # For all-zero columns, leave the phase factor as 1.
+    phases = tf.where(
+        tf.abs(pivots) > tol_real,
+        phases,
+        tf.ones_like(phases),
+    )
 
-        V_out.append(v_fixed)
-
-    return tf.stack(V_out, axis=1)
+    return V / phases[tf.newaxis, :]
 
 
 def eigh(a, b, subset_by_index=None):
@@ -130,4 +135,3 @@ def gradient(y, x, numpy: bool = False):
             middle,
             [end]
         ], axis=0)
-

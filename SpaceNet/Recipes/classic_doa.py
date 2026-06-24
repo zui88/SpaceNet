@@ -43,19 +43,19 @@ class ClassicDOA(Recipe):
                           "estimated_rcov", "r_sensed")
 
         self.connect_node("estimated_rcov", "r_cov",
-                          "evd", "rcov")
+                          "evd", "r_cov")
         self.connect_node("evd", "eigs",
                           "signal_sources", "eigs")
-        self.connect_node("evd", "eigsv",
-                          "noise_subspace", "eigsv")
-        self.connect_node("signal_sources", "k_est",
-                          "noise_subspace", "k_est")
+        self.connect_node("evd", "eigs_v",
+                          "noise_subspace", "eigs_v")
+        self.connect_node("signal_sources", "d_est",
+                          "noise_subspace", "d_est")
         self.connect_node("noise_subspace", "Un",
                           "inv_spec", "Un")
         self.connect_node("inv_spec", "spectrum",
                           "peak_finder", "spectrum")
-        self.connect_node("signal_sources", "k_est",
-                          "peak_finder", "k_est")
+        self.connect_node("signal_sources", "d_est",
+                          "peak_finder", "d_est")
         self.connect_node("peak_finder", "peaks",
                           "doa", "peaks")
 

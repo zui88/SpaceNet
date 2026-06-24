@@ -1,22 +1,24 @@
-import tensorflow as tf
-from tensorflow import keras
-
 from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 
+from tensorflow import keras
+import tensorflow as tf
+import numpy as np
 
-class DeepPeakFinder(Plugin):
+
+class DeepPeakConverter(Plugin):
 
 
     def __init__(self, finder_network: tf.keras.Model) -> None:
         self.finder_network      = finder_network
         self.input_ports: Ports  = {"spectrum": Link()}
-        self.output_ports: Ports = {"doa": Link()}
+        self.output_ports: Ports = {"value": Link()}
 
 
     def execute(self) -> None:
-        spectrum_batched = self.input_ports["spectrum"].value
+        spectrum = self.input_ports["spectrum"].value
 
-        if isinstance(spectrum_batched, list):
-            spectrum_batched = tf.stack(spectrum_batched)
+        if isinstance(spectrum, np.ndarray):
+            spectrum = tf.stack(spectrum)
 
-        self.output_ports["doa"].value = self.finder_network(spectrum_batched)
+        value                            = self.finder_network(spectrum)
+        self.output_ports["value"].value = value

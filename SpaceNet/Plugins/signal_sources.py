@@ -31,7 +31,7 @@ class SignalSources(Plugin):
         self.d_sources           = d_sources
         self.inference_mode      = inference_mode
         self.input_ports: Ports  = {"eigs": Link()}
-        self.output_ports: Ports = {"k_est": Link()}
+        self.output_ports: Ports = {"d_est": Link()}
 
 
     def execute(self) -> None:
@@ -52,4 +52,4 @@ class SignalSources(Plugin):
                 )
             k_est_batched.append(k_est)
 
-        self.output_ports["k_est"].value = tf.convert_to_tensor(k_est_batched)
+        self.output_ports["d_est"].value = tf.convert_to_tensor(k_est_batched)
