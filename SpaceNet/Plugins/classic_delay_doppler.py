@@ -78,7 +78,7 @@ class ClassicDelayDoppler(Plugin):
         S = np.fft.fftshift(np.fft.fft(s))  # (Nx1)
         dS = gradient(S, w, numpy=True)  # (Nx1)
 
-        # --- compute B because it's not dependant on tau ---
+        # --- compute B because it's not dependent on tau ---
         B_mat = np.real(np.array([[S.conj().T @ S, -S.conj().T @ dS],
                                   [-dS.conj().T @ S, dS.conj().T @ dS]]))
 
@@ -91,14 +91,14 @@ class ClassicDelayDoppler(Plugin):
 
             lambdas, gammas = eigh(a=A_mat, b=B_mat, subset_by_index=[0, 1])
 
-            lambda_min = lambdas[0]
+            lambda_min       = lambdas[0]
             cost_function[i] = lambda_min
-            gamma_min = gammas[:, 0]
-            omega_grid[i] = gamma_min[1] / gamma_min[0]
+            gamma_min        = gammas[:, 0]
+            omega_grid[i]    = gamma_min[1] / gamma_min[0]
 
         # --- results ---
-        idx = np.argsort(cost_function)[:self.d_sources]
-        tau_est = tau_grid[idx]
+        idx       = np.argsort(cost_function)[:self.d_sources]
+        tau_est   = tau_grid[idx]
         omega_est = omega_grid[idx]
 
         return tau_est, omega_est, tau_grid, cost_function

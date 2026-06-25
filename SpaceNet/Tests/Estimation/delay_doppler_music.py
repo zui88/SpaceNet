@@ -25,7 +25,7 @@ def delay_doppler():
     ##################################################
     config.base.inference_mode  = False # just to be explicit
     config.base.d_sources       = len(taus)
-    music_engine: Engine[RetDD] = create_delay_doppler_music(config)
+    music_engine: Engine[RetDD] = create_delay_doppler_music(config, "normal")
     DDRet: RetDD                = music_engine.estimate(r_sensed=r_sensed[None, :])
     dd: DelayDoppler            = DDRet[0]
     print("classic delay doppler music: [delay - {}], [doppler - {}]".format(dd.delay[0], dd.doppler[0]))

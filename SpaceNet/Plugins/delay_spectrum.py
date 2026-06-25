@@ -47,8 +47,12 @@ class DelaySpectrum(Plugin):
             The context where the observation will be recorded.
         """
         self.input_ports: Ports  = {"Un": Link()}
-        self.output_ports: Ports = {"spectrum": Link(),
-                                    "spectrum_obj": Link()}
+        self.output_ports: Ports = {
+            "spectrum": Link(),
+            "spectrum_obj": Link(),
+            "taus_grid": Link(),
+            "omegas_grid": Link(),
+        }
 
         self.scan_range          = scan_range
         self.signal_provider     = signal_provider
@@ -60,14 +64,16 @@ class DelaySpectrum(Plugin):
     def execute(self):
         Un: tf.Tensor = self.input_ports["Un"].value
 
-        delay_grid, doppler_grid = self._compute_spectrum_graph(Un, self.G, self.B)
-        tau_grid                 = tf.broadcast_to(
+        cost_function, doppler_grid = self._compute_spectrum_graph(Un, self.G, self.B)
+        tau_grid                    = tf.broadcast_to(
             self.tau_grid[None, :],
             [tf.shape(Un)[0], self.scan_range],
         )
 
-        self.output_ports["spectrum"].value     = delay_grid
-        self.output_ports["spectrum_obj"].value = Spectrum(delay_grid, tau_grid)
+        self.output_ports["spectrum"].value     = cost_function
+        self.output_ports["spectrum_obj"].value = Spectrum(cost_function, tau_grid)
+        self.output_ports["taus_grid"].value    = tau_grid
+        self.output_ports["omegas_grid"].value  = doppler_grid
 
 
     @tf.function(reduce_retracing=True)
@@ -100,6 +106,7 @@ class DelaySpectrum(Plugin):
             gamma_min       = gammas[:, 0]
             omega           = tf.math.real(gamma_min[1] / gamma_min[0])
             return lambdas[0], tf.cast(omega, dtype=tf.float32)
+
 
         lambda_min_flat, omega_flat = tf.vectorized_map(
             solve_generalized_eigh,

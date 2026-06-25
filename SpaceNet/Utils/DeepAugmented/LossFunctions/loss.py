@@ -71,11 +71,7 @@ class PermutatedLoss(keras.losses.Loss, ABC):
 
 
     @tf.function
-    def call(
-        self,
-        y_true: tf.Tensor,
-        y_pred: tf.Tensor,
-    ) -> tf.Tensor:
+    def call(self, y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
         """
         This function is meant to be called by the training pipeline.  It is optimized to work inside graph computation.
 

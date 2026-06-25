@@ -1,6 +1,8 @@
+import numpy as np
+
 from SpaceNet.Capabilities.deep_augment import DeepAugment, ModelName
 from SpaceNet.Recipes.deep_delay_doppler import DeepDelayDoppler
-from SpaceNet.Recipes.classic_delay_doppler import ClassicDelayDoppler
+from SpaceNet.Recipes.classic_delay_doppler import ClassicDelayDopplerFast, ClassicDelayDoppler
 from SpaceNet.Utils.decorators import static_vars
 from SpaceNet.Engines.engine import CapabilityRegistryType, DelayDoppler
 from SpaceNet.Configs.DelayDoppler.config import Config as DDConfig
@@ -22,6 +24,7 @@ class DelayDopperEngine(Engine[RetDD]):
         self.config: DDConfig = config
 
         self.dispatcher: dict[type[Recipe], Callable[[], Recipe]] = {
+            ClassicDelayDopplerFast: self._construct_classic_dd_fast,
             ClassicDelayDoppler: self._construct_classic_dd,
             DeepDelayDoppler: self._construct_da_dd,
         }
@@ -62,13 +65,27 @@ class DelayDopperEngine(Engine[RetDD]):
             raise NotImplementedError("d_sources not specified, inference not supported")
 
 
+    def _construct_classic_dd_fast(self) -> Recipe:
+        d_sources = self.config.base.d_sources
+
+        if d_sources is not None:
+            return ClassicDelayDopplerFast(
+                d_sources=d_sources,
+                observ_ctx=self.config.observ_ctx,
+                signal_provider=self.config.base.signal_provider,
+            )
+        else:
+            raise NotImplementedError("d_sources not specified, inference not supported")
+
+
     def _construct_classic_dd(self) -> Recipe:
         d_sources = self.config.base.d_sources
 
         if d_sources is not None:
             return ClassicDelayDoppler(
                 d_sources=d_sources,
-                observ_ctx=self.config.observ_ctx,
+                scan_range=self.config.base.scan_range,
+                observation_context=self.config.observ_ctx,
                 signal_provider=self.config.base.signal_provider,
             )
         else:
@@ -80,8 +97,10 @@ class DelayDopperEngine(Engine[RetDD]):
         if self.recipe is not None:
             result = self.recipe.run(r_sensed=inputs["r_sensed"])
             # todo
-            #return DelayDoppler(result["tau_est"], result["omega_est"]), result
-            return DelayDoppler(result["tau_est"]), result
+            try:
+                return DelayDoppler(result["tau_est"], result["omega_est"]), result
+            except KeyError:
+                return DelayDoppler(result["tau_est"], np.ndarray([])), result
         else:
             if DelayDopperEngine.estimate.tries < 5:
                 DelayDopperEngine.estimate.tries += 1

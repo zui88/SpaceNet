@@ -36,20 +36,20 @@ class SignalSources(Plugin):
 
     def execute(self) -> None:
         eigs          = self.input_ports["eigs"].value
-        k_est_batched = []
+        d_est_batched = []
 
         for eig_values, n_samples, m_sensors in zip(
             eigs.eigs_batch,
             eigs.n_samples_batch,
             eigs.m_sensors_batch,
         ):
-            k_est = self.d_sources
+            d_est = self.d_sources
             if self.inference_mode:
-                k_est = _compute_unambiguous_sources(
+                d_est = _compute_unambiguous_sources(
                     tf.math.real(eig_values).numpy(),
                     int(n_samples.numpy()),
                     int(m_sensors.numpy()),
                 )
-            k_est_batched.append(k_est)
+            d_est_batched.append(d_est)
 
-        self.output_ports["d_est"].value = tf.convert_to_tensor(k_est_batched)
+        self.output_ports["d_est"].value = tf.convert_to_tensor(d_est_batched)

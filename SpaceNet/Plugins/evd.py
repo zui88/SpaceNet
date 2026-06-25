@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import tensorflow as tf
 
 
+#todo: remove and use Ports instead
 @dataclass(frozen=True, slots=True)
 class Eigs:
     eigs_batch: tf.Tensor
@@ -32,9 +33,9 @@ class EVD(Plugin):
         eigs         = tf.gather(eigs, idx, batch_dims=1)
         eigs_v       = tf.gather(eigs_v, idx, axis=2, batch_dims=1)
 
-        self.output_ports["eigs_v"].value = eigs_v
-        self.output_ports["eigs"].value  = Eigs(
-            eigs,
+        self.output_ports["eigs_v"].value = tf.cast(eigs_v, tf.complex64)
+        self.output_ports["eigs"].value   = Eigs(
+            tf.cast(eigs, tf.complex64),
             r_cov.n_samples_batch,
             r_cov.m_sensors_batch,
         )

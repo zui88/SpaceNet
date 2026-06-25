@@ -7,12 +7,33 @@ from SpaceNet.Configs.DelayDoppler.config import Config
 from SpaceNet.Engines.engine import Engine
 from SpaceNet.Engines.delay_doppler import DelayDopperEngine
 from SpaceNet.Engines.engine import RetDD
-from SpaceNet.Recipes.classic_delay_doppler import ClassicDelayDoppler
+from SpaceNet.Recipes.classic_delay_doppler import ClassicDelayDopplerFast, ClassicDelayDoppler
 from SpaceNet.Recipes.deep_delay_doppler import DeepDelayDoppler
 
 
-def create_delay_doppler_music(configs: Config) -> Engine[RetDD]:
-    return DelayDopperEngine(configs, ClassicDelayDoppler)
+def create_delay_doppler_music(configs: Config, kind: str = 'fast') -> Engine[RetDD]:
+    """
+
+    Parameters
+    ----------
+    configs
+    kind: str (default: 'fast')
+        fast | normal
+
+    Returns
+    -------
+
+    """
+    engine: Engine[RetDD]
+    match kind:
+        case 'normal':
+            engine = DelayDopperEngine(configs, ClassicDelayDoppler)
+        case 'fast':
+            engine = DelayDopperEngine(configs, ClassicDelayDopplerFast)
+        case _:
+            raise ValueError(f"Unknown DelayDoppler engine '{kind}'")
+
+    return engine
 
 
 def create_deep_doppler_music(configs: Config, define_models: bool = False) -> Engine[RetDD]:

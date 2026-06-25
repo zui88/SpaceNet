@@ -39,7 +39,7 @@ class Doa:
 class DelayDoppler:
     delay: np.ndarray
     # todo
-    #doppler: np.ndarray
+    doppler: np.ndarray
 
 
     @property

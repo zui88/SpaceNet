@@ -12,8 +12,7 @@ from tensorflow import keras
 class DeepDelayDoppler(Recipe):
 
 
-    def __init__(
-            self,
+    def __init__(self,
             d_sources: int,
             scan_range: int,
             signal_provider: SignalGenerator,
