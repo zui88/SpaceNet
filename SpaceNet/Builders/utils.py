@@ -15,24 +15,45 @@ from tensorflow import keras
 from typing import Callable, Any
 
 
-def build_networks(names: tuple[str, ...], creator_functions: tuple[Callable[[...], keras.Model], ...], args_functions: tuple[dict[str, Any], ...]) -> dict[str, keras.Model]:
-    return {name: create_model(**args) for name, create_model, args in zip(names, creator_functions, args_functions)}
+def build_networks(
+    names: tuple[str, ...],
+    creator_functions: tuple[Callable[[...], keras.Model], ...],
+    args_functions: tuple[dict[str, Any], ...],
+) -> dict[str, keras.Model]:
+    return {
+        name: create_model(**args)
+        for name, create_model, args in zip(names, creator_functions, args_functions)
+    }
 
 
-def create_deep_music_engine(configs: DoaConfig | DDConfig | None, engine_type: type[Engine], cls: type[Recipe], model_names: list[str], defined_models: dict[str, keras.Model] | None) -> Engine[RetDoa] | Engine[RetDD]:
-    configs_load_save_path = 'configs'
+def create_deep_music_engine(
+    configs: DoaConfig | DDConfig | None,
+    engine_type: type[Engine],
+    cls: type[Recipe],
+    model_names: list[str],
+    defined_models: dict[str, keras.Model] | None,
+) -> Engine[RetDoa] | Engine[RetDD]:
+    configs_load_save_path = "configs"
     if configs is not None:
         configDecoder = JsonEncoderDecoder(configs)
         configDecoder.save(configs_load_save_path)
     else:
-        configDecoder = JsonEncoderDecoder(DoaConfig) if engine_type is DoaEngine else JsonEncoderDecoder(DDConfig)
-        configs       = configDecoder.load(configs_load_save_path)
+        configDecoder = (
+            JsonEncoderDecoder(DoaConfig)
+            if engine_type is DoaEngine
+            else JsonEncoderDecoder(DDConfig)
+        )
+        configs = configDecoder.load(configs_load_save_path)
 
-    DeepEngine                                = make_trainable(DoaEngine) if engine_type is DoaEngine else make_trainable(DelayDopperEngine)
-    engine                                    = DeepEngine(configs, cls)
+    DeepEngine = (
+        make_trainable(DoaEngine)
+        if engine_type is DoaEngine
+        else make_trainable(DelayDopperEngine)
+    )
+    engine = DeepEngine(configs, cls)
     engine.capability_registry[Configuration] = configDecoder
-    base_path                                 = configs.deep_augmented.model_dir
-    base_name                                 = configs.deep_augmented.base_name
+    base_path = configs.deep_augmented.model_dir
+    base_name = configs.deep_augmented.base_name
 
     capability = DeepAugmentV1(engine, model_names, base_name, base_path)
 

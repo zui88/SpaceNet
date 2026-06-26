@@ -4,7 +4,9 @@ from SpaceNet.Engines.engine import CapabilityRegistryType
 from SpaceNet.Capabilities.deep_augment import DeepAugment
 from SpaceNet.Configs.Doa import config as DoaConfig
 from SpaceNet.Recipes.classic_doa import ClassicDOA
-from SpaceNet.Recipes.deep_classic_doa_without_selector import DeepClassicDOA as DeepClassicDOA_WS
+from SpaceNet.Recipes.deep_classic_doa_without_selector import (
+    DeepClassicDOA as DeepClassicDOA_WS,
+)
 from SpaceNet.Recipes.deep_classic_doa import DeepClassicDOA
 from SpaceNet.Engines.engine import RetDoa, Doa, Engine
 from SpaceNet.Recipes.root_doa import RootDOA
@@ -14,8 +16,6 @@ from typing import Callable
 
 
 class DoaEngine(Engine[RetDoa]):
-
-
     def __init__(self, configs: DoaConfig.Config, recipe_cls: type[Recipe]):
         self.recipe: Recipe | None = None
         self.capability_registry: CapabilityRegistryType = {}
@@ -29,9 +29,8 @@ class DoaEngine(Engine[RetDoa]):
             DeepClassicDOA_WS: self._construct_deep_classic_doa_ws,
             ClassicDOA: self._construct_classic,
             RootDOA: self._construct_root_doa,
-            DeepRootDOA: self._construct_deep_root_doa
+            DeepRootDOA: self._construct_deep_root_doa,
         }
-
 
     def init(self):
         """
@@ -45,7 +44,6 @@ class DoaEngine(Engine[RetDoa]):
             self.recipe = self.dispatcher[self.recipe_cls]()
         except KeyError as e:
             raise NotImplementedError(f"Recipe not registered for dispatching: {e}")
-
 
     def _construct_deep_classic_doa_ws(self) -> Recipe:
         models = self.capability_registry[DeepAugment].get_models()
@@ -64,7 +62,6 @@ class DoaEngine(Engine[RetDoa]):
         else:
             raise NotImplementedError("d_sources not configured")
 
-
     def _construct_deep_classic_doa(self) -> Recipe:
         models = self.capability_registry[DeepAugment].get_models()
         if models is None:
@@ -79,14 +76,12 @@ class DoaEngine(Engine[RetDoa]):
             selector_network=models["selector"],
         )
 
-
     def _construct_root_doa(self) -> Recipe:
         return RootDOA(
             d_sources=self.base_config.d_sources,
             inference_mode=self.base_config.inference_mode,
             eps_roots=self.deep_config.eps_roots,
         )
-
 
     def _construct_deep_root_doa(self) -> Recipe:
         models = self.capability_registry[DeepAugment].get_models()
@@ -101,7 +96,6 @@ class DoaEngine(Engine[RetDoa]):
             eps_roots=self.deep_config.eps_roots,
         )
 
-
     def _construct_classic(self) -> Recipe:
         return ClassicDOA(
             steering=self.base_config.steering,
@@ -109,7 +103,6 @@ class DoaEngine(Engine[RetDoa]):
             d_sources=self.base_config.d_sources,
             inference_mode=self.base_config.inference_mode,
         )
-
 
     @static_vars(tries=0)
     def estimate(self, **inputs) -> RetDoa:

@@ -18,24 +18,20 @@ def _mdl(i, eigs, n_samples, n_sensors):
 
 
 def _compute_unambiguous_sources(eigs, n_samples, n_sensors):
-    return np.argmin([
-        _mdl(i, eigs, n_samples, n_sensors)
-        for i in range(n_sensors - 1)
-    ])
+    return np.argmin(
+        [_mdl(i, eigs, n_samples, n_sensors) for i in range(n_sensors - 1)]
+    )
 
 
 class SignalSources(Plugin):
-
-
     def __init__(self, d_sources: int | None = None, inference_mode: bool = True):
-        self.d_sources           = d_sources
-        self.inference_mode      = inference_mode
-        self.input_ports: Ports  = {"eigs": Link()}
+        self.d_sources = d_sources
+        self.inference_mode = inference_mode
+        self.input_ports: Ports = {"eigs": Link()}
         self.output_ports: Ports = {"d_est": Link()}
 
-
     def execute(self) -> None:
-        eigs          = self.input_ports["eigs"].value
+        eigs = self.input_ports["eigs"].value
         d_est_batched = []
 
         for eig_values, n_samples, m_sensors in zip(

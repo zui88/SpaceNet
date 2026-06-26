@@ -13,9 +13,9 @@ type TransformerClass = type[Any]
 
 
 class DeepAugment(Protocol):
-
-
-    def register_transformer(self, transformer: Callable[[Dataset], Dataset] | TransformerClass, **args):
+    def register_transformer(
+        self, transformer: Callable[[Dataset], Dataset] | TransformerClass, **args
+    ):
         """
 
         Parameters
@@ -32,42 +32,36 @@ class DeepAugment(Protocol):
         """
         pass
 
-
-    def fit_transformer(self, dataset: Dataset) -> None:...
-
+    def fit_transformer(self, dataset: Dataset) -> None: ...
 
     @property
-    def transformer(self) -> Callable[[Dataset], Dataset] | None:...
+    def transformer(self) -> Callable[[Dataset], Dataset] | None: ...
 
+    def register_models(
+        self, model_descriptions: dict[ModelName, keras.models.Model]
+    ) -> None: ...
 
-    def register_models(self, model_descriptions: dict[ModelName, keras.models.Model]) -> None:...
+    def register_model(self, name: ModelName, model: keras.models.Model) -> None: ...
 
+    def get_models(self) -> dict[ModelName, keras.models.Model] | None: ...
 
-    def register_model(self, name: ModelName, model: keras.models.Model) -> None:...
+    def load_models(self): ...
 
+    def save_models(self): ...
 
-    def get_models(self) -> dict[ModelName, keras.models.Model] | None:...
+    def conditionally_save(self, threshold: Percent = 0.0) -> bool: ...
 
-
-    def load_models(self):...
-
-
-    def save_models(self):...
-
-
-    def conditionally_save(self, threshold: Percent = 0.) -> bool:...
-
-
-    def train_models(self,
-                     input_data: Dataset,
-                     output_data: Dataset,
-                     validation_data: tuple[Dataset, Dataset] | None = None,
-                     freezing_layers: tuple[bool, ...] | None = None,
-                     debuggable: bool = False,
-                     epochs: int = 200,
-                     batch_size: int = 32,
-                     learning_rate: float = 0.0001,
-                     patience: int | None = None,
-                     factor: float = 0.25,
-                     loss: PermutatedLoss = RMSPELoss()
-    ) -> keras.callbacks.History:...
+    def train_models(
+        self,
+        input_data: Dataset,
+        output_data: Dataset,
+        validation_data: tuple[Dataset, Dataset] | None = None,
+        freezing_layers: tuple[bool, ...] | None = None,
+        debuggable: bool = False,
+        epochs: int = 200,
+        batch_size: int = 32,
+        learning_rate: float = 0.0001,
+        patience: int | None = None,
+        factor: float = 0.25,
+        loss: PermutatedLoss = RMSPELoss(),
+    ) -> keras.callbacks.History: ...

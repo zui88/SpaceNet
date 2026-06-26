@@ -9,7 +9,7 @@ import numpy as np
 
 def doa():
     deep_music_engine: Engine[RetDoa] = create_deep_classic_music()
-    config: Config                    = deep_music_engine.configs
+    config: Config = deep_music_engine.configs
 
     ##################################################
     # generate the signal
@@ -18,7 +18,7 @@ def doa():
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,
         deg_range=(-70.0, 70.0),
-        min_spacing=5, # 15 grad guy
+        min_spacing=5,  # 15 grad guy
         samples=5,
         max_signal_sources=config.base.d_sources,
         snr_db=30,
@@ -33,9 +33,9 @@ def doa():
     doa_result: Doa = doa_ret[0]
     print("deep augmented classic music: ", np.rad2deg(doa_result.thetas))
 
-    rmspe      = RMSPELoss()
+    rmspe = RMSPELoss()
     loss_array = rmspe.loss(doa, doa_result._thetas)
-    loss_mean  = np.mean(loss_array)
+    loss_mean = np.mean(loss_array)
     print(f"loss array {loss_array}")
     print(f"loss mean: {loss_mean}")
 

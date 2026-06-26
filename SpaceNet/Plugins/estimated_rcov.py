@@ -6,7 +6,7 @@ import tensorflow as tf
 import numpy as np
 
 
-#todo: remove Rxx, using ports instead for dataflow
+# todo: remove Rxx, using ports instead for dataflow
 @dataclass(frozen=True)
 class Rxx:
     cov_batch: tf.Tensor
@@ -15,18 +15,15 @@ class Rxx:
 
 
 class EstimateRcov(Plugin):
-
-
     def __init__(self):
-        self.input_ports: Ports  = {"r_sensed": Link()}
+        self.input_ports: Ports = {"r_sensed": Link()}
         self.output_ports: Ports = {"r_cov": Link()}
 
-
     def execute(self) -> None:
-        r_batched                = tf.convert_to_tensor(self.input_ports["r_sensed"].value)
+        r_batched = tf.convert_to_tensor(self.input_ports["r_sensed"].value)
         _, m_antennas, n_samples = r_batched.shape
 
-        cov_batched     = []
+        cov_batched = []
         n_samples_batch = []
         n_sensors_batch = []
 
@@ -44,24 +41,21 @@ class EstimateRcov(Plugin):
 
 
 class EstimateRcovFFT(Plugin):
-
-
     def __init__(self):
-        self.input_ports: Ports  = {"r_sensed": Link()}
+        self.input_ports: Ports = {"r_sensed": Link()}
         self.output_ports: Ports = {"r_cov": Link()}
-
 
     def execute(self) -> None:
         r: tf.Tensor = self.input_ports["r_sensed"].value
 
         m_antennas = r.shape[-1]
-        n_samples  = r.shape[-2]
-        R          = np.fft.fftshift(
+        n_samples = r.shape[-2]
+        R = np.fft.fftshift(
             np.fft.fft(r, axis=1),
             axes=1,
         )  # (batch,N,M)
 
-        R_cov = R @ R.conj().swapaxes(-1, -2) / m_antennas # (N,N)
+        R_cov = R @ R.conj().swapaxes(-1, -2) / m_antennas  # (N,N)
 
         self.output_ports["r_cov"].value = Rxx(
             tf.stack(R_cov),

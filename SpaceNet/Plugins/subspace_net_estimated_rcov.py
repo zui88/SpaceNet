@@ -3,7 +3,6 @@ This plugin implements one component of the approach from Guy Revach of his prop
 framework SubspaceNet.
 """
 
-
 from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 
 from dataclasses import dataclass
@@ -20,13 +19,12 @@ class Rxx:
 
 
 class SubspaceNetEstimateRcov(Plugin):
-
-
-    def __init__(self,
-                 rcov_network: keras.models.Model,
-                 tau: int = 8,
-                 eps: float = 1,
-                 ) -> None:
+    def __init__(
+        self,
+        rcov_network: keras.models.Model,
+        tau: int = 8,
+        eps: float = 1,
+    ) -> None:
         self.input_ports: Ports = {"r_sensed": Link()}
         self.output_ports: Ports = {"surrogate_rcov": Link()}
 
@@ -34,15 +32,14 @@ class SubspaceNetEstimateRcov(Plugin):
         self.tau = tau
         self.eps = eps
 
-
     def execute(self) -> None:
         r_batched = tf.convert_to_tensor(self.input_ports["r_sensed"].value)
 
-        Rxx_tau      = self._compute_empirical_autocorrelation(r_batched)
-        Rxx_predict  = self._predict(Rxx_tau)
-        Kxx          = self._compose_real_imag(Rxx_predict)
-        Rzz          = self._compute_hermit_psd(Kxx, eps=self.eps)
-        n_sensors    = Rzz.shape[2]
+        Rxx_tau = self._compute_empirical_autocorrelation(r_batched)
+        Rxx_predict = self._predict(Rxx_tau)
+        Kxx = self._compose_real_imag(Rxx_predict)
+        Rzz = self._compute_hermit_psd(Kxx, eps=self.eps)
+        n_sensors = Rzz.shape[2]
         n_batch_size = Rzz.shape[0]
 
         self.output_ports["surrogate_rcov"].value = Rxx(
@@ -52,7 +49,6 @@ class SubspaceNetEstimateRcov(Plugin):
             # pyrefly: ignore [bad-argument-type]
             n_samples_batch=tf.constant([self.n_samples for _ in range(n_batch_size)]),
         )
-
 
     @staticmethod
     def _sample_autocov(X: tf.Tensor, tau: int) -> tuple[tf.Tensor, tf.Tensor]:
@@ -68,12 +64,11 @@ class SubspaceNetEstimateRcov(Plugin):
         """
         M, T = X.shape
         # pyrefly: ignore [unsupported-operation]
-        X1 = X[:, :T - tau]  # x(t)
+        X1 = X[:, : T - tau]  # x(t)
         X2 = X[:, tau:T]  # x(t+tau)
         R = tf.matmul(X1, X2, adjoint_b=True)
         # pyrefly: ignore [bad-return]
         return R, T
-
 
     def _compute_empirical_autocorrelation(self, r_batched: tf.Tensor) -> tf.Tensor:
         """
@@ -89,16 +84,15 @@ class SubspaceNetEstimateRcov(Plugin):
         for r in r_batched:
             autocov_set = []
             for i in range(self.tau):
-                Rxx, n  = self._sample_autocov(r, tau=i)
-                imag    = tf.math.imag(Rxx)
-                real    = tf.math.real(Rxx)
+                Rxx, n = self._sample_autocov(r, tau=i)
+                imag = tf.math.imag(Rxx)
+                real = tf.math.real(Rxx)
                 autocov_set.append(tf.keras.ops.append(imag, real, axis=0))
 
             self.n_samples = n
             autocov_batched.append(tf.stack(autocov_set))
 
         return tf.stack(autocov_batched)
-
 
     def _compose_real_imag(self, Rxx):
         """
@@ -108,12 +102,11 @@ class SubspaceNetEstimateRcov(Plugin):
         :param Rxx: shape: (batch_size, 2*M, M)
         :return: shape: (batch_size, M, M)
         """
-        M        = Rxx.shape[-1]
-        Rxx_real = Rxx[:, M :, :]
-        Rxx_imag = Rxx[:, : M, :]
-        Rxx_tag  = tf.complex(Rxx_real, Rxx_imag)
+        M = Rxx.shape[-1]
+        Rxx_real = Rxx[:, M:, :]
+        Rxx_imag = Rxx[:, :M, :]
+        Rxx_tag = tf.complex(Rxx_real, Rxx_imag)
         return Rxx_tag
-
 
     def _compute_hermit_psd(self, Kxx, eps: float) -> tf.Tensor:
         """
@@ -125,14 +118,13 @@ class SubspaceNetEstimateRcov(Plugin):
         :return: Size: (batch_size, M, M)
         """
         batch_size, _, M = Kxx.shape
-        Rzz              = []
+        Rzz = []
         for batch in range(batch_size):
             Kxx_Hermit = tf.matmul(Kxx[batch], Kxx[batch], adjoint_b=True)
-            eps_add    = tf.eye(M, dtype=tf.complex64) * eps
+            eps_add = tf.eye(M, dtype=tf.complex64) * eps
             Rzz.append(Kxx_Hermit + eps_add)
 
         return tf.stack(Rzz)
-
 
     def _predict(self, Rxx_tau):
         """
@@ -143,8 +135,10 @@ class SubspaceNetEstimateRcov(Plugin):
         # shape: (batch_size, tau, 2*M, M) -> NCHW format
         batch_size, _, M2, M = Rxx_tau.shape
         # tf.transpose: Permutes the dimensions according to the value of perm.
-        Rxx_NHWC             = tf.transpose(Rxx_tau, perm=(0, 2, 3, 1)) # shape: (batch_size, 2*M, M, tau) -> NHWC format
-        Rxx_predicted        = self.rcov_network(Rxx_NHWC)
+        Rxx_NHWC = tf.transpose(
+            Rxx_tau, perm=(0, 2, 3, 1)
+        )  # shape: (batch_size, 2*M, M, tau) -> NHWC format
+        Rxx_predicted = self.rcov_network(Rxx_NHWC)
         # flatten the output
-        Rxx_complex_split    = tf.reshape(Rxx_predicted, shape=(batch_size, M2, M))
+        Rxx_complex_split = tf.reshape(Rxx_predicted, shape=(batch_size, M2, M))
         return Rxx_complex_split

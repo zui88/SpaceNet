@@ -8,13 +8,13 @@ class RMSELoss(PermutatedLoss):
     Root Means Square Error
     """
 
-
     def __init__(self, gain: float = 1, **kwargs):
         super().__init__(**kwargs)
         self.gain = gain
 
-
-    def compute_error(self, ground_truth: tf.Tensor, predictions: tf.Tensor) -> tf.Tensor:
+    def compute_error(
+        self, ground_truth: tf.Tensor, predictions: tf.Tensor
+    ) -> tf.Tensor:
         """
 
         Parameters
@@ -26,8 +26,8 @@ class RMSELoss(PermutatedLoss):
         -------
 
         """
-        DELAY              = 0
-        ground_truth_delay = ground_truth[:, :, DELAY, :] #(batch,1,d)
-        delay              = predictions
-        delta_delay        = (ground_truth_delay - delay) * self.gain
+        DELAY = 0
+        ground_truth_delay = ground_truth[:, :, DELAY, :]  # (batch,1,d)
+        delay = predictions
+        delta_delay = (ground_truth_delay - delay) * self.gain
         return delta_delay

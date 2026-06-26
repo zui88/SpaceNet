@@ -31,7 +31,7 @@ def _generalized_eigh_scipy_compatible(A, B, eps=1e-12):
     eigvals, eigvecs = tf.linalg.eigh(A_tilde)
 
     # ---- back-transform ----
-    V = B_inv_sqrt @ eigvecs   # columns = eigenvectors
+    V = B_inv_sqrt @ eigvecs  # columns = eigenvectors
 
     # ============================================================
     # POST-PROCESSING (match SciPy)
@@ -106,8 +106,8 @@ def eigh(a, b, subset_by_index=None):
 
     if subset_by_index is not None:
         i0, i1 = subset_by_index
-        eigvals = eigvals[i0:i1 + 1]
-        eigvecs = eigvecs[:, i0:i1 + 1]
+        eigvals = eigvals[i0 : i1 + 1]
+        eigvecs = eigvecs[:, i0 : i1 + 1]
 
     return eigvals, eigvecs
 
@@ -124,14 +124,6 @@ def gradient(y, x, numpy: bool = False):
 
     # hrrr.. what a journye
     if not numpy:
-        return tf.concat([
-            [start],
-            middle,
-            [end]
-        ], axis=0)
+        return tf.concat([[start], middle, [end]], axis=0)
     else:
-        return np.concatenate([
-            [start],
-            middle,
-            [end]
-        ], axis=0)
+        return np.concatenate([[start], middle, [end]], axis=0)

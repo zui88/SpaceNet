@@ -10,7 +10,6 @@ import numpy as np
 class Doa:
     _thetas: np.ndarray
 
-
     @property
     def thetas(self) -> np.ndarray:
         def f(x):
@@ -20,15 +19,12 @@ class Doa:
                 return x % np.pi
             return x
 
-
         vf = np.vectorize(f)
         return vf(self._thetas)
-
 
     @thetas.setter
     def thetas(self, thetas: np.ndarray):
         self._thetas = thetas
-
 
     @property
     def raw(self) -> np.ndarray:
@@ -40,7 +36,6 @@ class DelayDoppler:
     delay: np.ndarray
     # todo
     doppler: np.ndarray
-
 
     @property
     def raw(self) -> np.ndarray:
@@ -63,10 +58,7 @@ class Engine[T](Protocol):
         registering the config.
     """
 
-
     capability_registry: CapabilityRegistryType
     configs: Any
 
-
-    def estimate(self, **inputs) -> T:
-        ...
+    def estimate(self, **inputs) -> T: ...

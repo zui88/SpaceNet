@@ -5,8 +5,6 @@ from typing import Callable, Any
 
 
 class BinaryOperation(Plugin):
-
-
     def __init__(self, operation: Callable[[Any, Any], Any]):
         self.operation = operation
         self.input_ports: Ports = {
@@ -17,7 +15,6 @@ class BinaryOperation(Plugin):
             "result": Link(),
         }
 
-
     def execute(self) -> None:
         self.output_ports["result"].value = self.operation(
             self.input_ports["a"].value,
@@ -26,21 +23,15 @@ class BinaryOperation(Plugin):
 
 
 class Addition(BinaryOperation):
-
-
     def __init__(self):
         super().__init__(add)
 
 
 class Substract(BinaryOperation):
-
-
     def __init__(self):
         super().__init__(sub)
 
 
 class Multiply(BinaryOperation):
-
-
     def __init__(self):
         super().__init__(mul)

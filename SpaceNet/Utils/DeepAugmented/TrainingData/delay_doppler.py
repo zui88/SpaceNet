@@ -6,13 +6,13 @@ import numpy as np
 
 
 def sample_delay_doppler(
-        rng: np.random.Generator,
-        d_sources: int,
-        delay_range: tuple[float, float],
-        doppler_range: tuple[float, float],
-        min_separation_delay: float,
-        min_separation_doppler: float,
-        max_attempts: int = 1_000,
+    rng: np.random.Generator,
+    d_sources: int,
+    delay_range: tuple[float, float],
+    doppler_range: tuple[float, float],
+    min_separation_delay: float,
+    min_separation_doppler: float,
+    max_attempts: int = 1_000,
 ) -> np.ndarray:
     """
     Sample `d_sources` delay-doppler pairs with independent minimum spacing
@@ -53,9 +53,8 @@ def sample_delay_doppler(
     for _ in range(max_attempts):
         delays = np.sort(rng.uniform(low, high, size=d_sources))
         dopplers = np.sort(rng.uniform(doppler_low, doppler_high, size=d_sources))
-        if (
-                np.all(np.diff(delays) >= min_separation_delay)
-                and np.all(np.diff(dopplers) >= min_separation_doppler)
+        if np.all(np.diff(delays) >= min_separation_delay) and np.all(
+            np.diff(dopplers) >= min_separation_doppler
         ):
             return np.stack([delays, dopplers], axis=0)
 
@@ -65,21 +64,21 @@ def sample_delay_doppler(
 
 
 def generate_data_set(
-        signal_generator,
-        training_examples: int = 1_000,
-        min_signal_sources: int | None = None,
-        max_signal_sources: int = 4,
-        n_samples: int = 50,
-        snr_db: float = 10.0,
-        snr_db_range: tuple[float, float] | None = None,
-        delay_range: tuple[float, float] = (0.6, 78.0),
-        min_delay_separation: float = 0.2,
-        doppler_range: tuple[float, float] = (-2.3, 2.3),
-        min_doppler_separation: float = 0.05,
-        sort_pairs: bool = False,
-        seed: int | None = 42,
-        array_geometry=None,
-        observ_ctx: ObservationContext | None = None,
+    signal_generator,
+    training_examples: int = 1_000,
+    min_signal_sources: int | None = None,
+    max_signal_sources: int = 4,
+    n_samples: int = 50,
+    snr_db: float = 10.0,
+    snr_db_range: tuple[float, float] | None = None,
+    delay_range: tuple[float, float] = (0.6, 78.0),
+    min_delay_separation: float = 0.2,
+    doppler_range: tuple[float, float] = (-2.3, 2.3),
+    min_doppler_separation: float = 0.05,
+    sort_pairs: bool = False,
+    seed: int | None = 42,
+    array_geometry=None,
+    observ_ctx: ObservationContext | None = None,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """
     Build a synthetic training set for deep delay-doppler MUSIC.
@@ -104,9 +103,7 @@ def generate_data_set(
     if min_signal_sources is None:
         min_signal_sources = max_signal_sources
     if min_signal_sources <= 0 or min_signal_sources > max_signal_sources:
-        raise ValueError(
-            "min_signal_sources must be > 0 and <= max_signal_sources."
-        )
+        raise ValueError("min_signal_sources must be > 0 and <= max_signal_sources.")
 
     if observ_ctx is None:
         observ_ctx = ObservationContext(T=n_samples / signal_generator.fs)
@@ -122,10 +119,10 @@ def generate_data_set(
     if snr_db_range is not None:
         snr_low, snr_high = snr_db_range
         if snr_low > snr_high:
-            raise ValueError(
-                "snr_db_range must be (low, high) with low <= high."
-            )
-        snr_db_set = [float(rng.uniform(snr_low, snr_high)) for _ in range(training_examples)]
+            raise ValueError("snr_db_range must be (low, high) with low <= high.")
+        snr_db_set = [
+            float(rng.uniform(snr_low, snr_high)) for _ in range(training_examples)
+        ]
 
     for snr in snr_db_set:
         dd_pair = sample_delay_doppler(

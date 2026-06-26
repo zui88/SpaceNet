@@ -12,17 +12,14 @@ import keras
 
 
 class DeepRootDOA(Recipe):
-
-
     def __init__(
-            self,
-            rcov_network: keras.models.Model,
-            d_sources: int | None = None,
-            inference_mode: bool = False,
-            tau: int = 8,
-            eps_roots: float = 1e-5,
-            eps_rcov: float = 1,
-
+        self,
+        rcov_network: keras.models.Model,
+        d_sources: int | None = None,
+        inference_mode: bool = False,
+        tau: int = 8,
+        eps_roots: float = 1e-5,
+        eps_rcov: float = 1,
     ):
 
         super().__init__()
@@ -34,37 +31,32 @@ class DeepRootDOA(Recipe):
         self.eps_rcov = eps_rcov
         self.tau = tau
 
-        self.register_node("estimated_rcov", SubspaceNetEstimateRcov(self.rcov_network,
-                                                                     eps=self.eps_rcov,
-                                                                     tau=self.tau,
-                                                                     ))
+        self.register_node(
+            "estimated_rcov",
+            SubspaceNetEstimateRcov(
+                self.rcov_network,
+                eps=self.eps_rcov,
+                tau=self.tau,
+            ),
+        )
         self.register_node("evd", EVD())
-        self.register_node("signal_sources", SignalSources(self.d_sources, self.inference_mode))
+        self.register_node(
+            "signal_sources", SignalSources(self.d_sources, self.inference_mode)
+        )
         self.register_node("noise_subspace", NoiseSubspace())
         self.register_node("root_spec", ComputeRootSpectrum())
         self.register_node("root_selector", RootSelector(self.eps_roots))
         self.register_node("doa", ComputeRootDOA())
 
-        self.connect_node("input", "r_sensed",
-                          "estimated_rcov", "r_sensed")
-        self.connect_node("estimated_rcov", "surrogate_rcov",
-                          "evd", "rcov")
-        self.connect_node("evd", "eigs",
-                          "signal_sources", "eigs")
-        self.connect_node("evd", "eigsv",
-                          "noise_subspace", "eigsv")
-        self.connect_node("signal_sources", "k_est",
-                          "noise_subspace", "k_est")
-        self.connect_node("noise_subspace", "Un",
-                          "root_spec", "Un")
-        self.connect_node("root_spec", "roots",
-                          "root_selector", "roots")
-        self.connect_node("signal_sources", "k_est",
-                          "root_selector", "k_est")
-        self.connect_node("root_selector", "roots",
-                          "doa", "roots")
+        self.connect_node("input", "r_sensed", "estimated_rcov", "r_sensed")
+        self.connect_node("estimated_rcov", "surrogate_rcov", "evd", "rcov")
+        self.connect_node("evd", "eigs", "signal_sources", "eigs")
+        self.connect_node("evd", "eigsv", "noise_subspace", "eigsv")
+        self.connect_node("signal_sources", "k_est", "noise_subspace", "k_est")
+        self.connect_node("noise_subspace", "Un", "root_spec", "Un")
+        self.connect_node("root_spec", "roots", "root_selector", "roots")
+        self.connect_node("signal_sources", "k_est", "root_selector", "k_est")
+        self.connect_node("root_selector", "roots", "doa", "roots")
 
-        self.connect_node("doa", "doa",
-                          "output", "doa")
-        self.connect_node("root_spec", "roots",
-                          "output", "roots")
+        self.connect_node("doa", "doa", "output", "doa")
+        self.connect_node("root_spec", "roots", "output", "roots")

@@ -12,21 +12,15 @@ type Ports = dict[ID, Link]
 
 
 class Plugin(Protocol):
-
-
     input_ports: Ports
     output_ports: Ports
-
 
     @property
     def inputs(self) -> Ports:
         return self.input_ports
 
-
     @property
     def outputs(self) -> Ports:
         return self.output_ports
 
-
-    def execute(self) -> None:
-        ...
+    def execute(self) -> None: ...

@@ -15,12 +15,9 @@ def find_roots(coeffs: list[tf.Tensor]) -> tf.Tensor:
 
 
 class ComputeRootSpectrum(Plugin):
-
-
     def __init__(self):
         self.input_ports: Ports = {"Un": Link()}
         self.output_ports: Ports = {"roots": Link()}
-
 
     def execute(self) -> None:
         un_batched = self.input_ports["Un"].value

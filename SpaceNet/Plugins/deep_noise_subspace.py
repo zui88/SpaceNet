@@ -5,16 +5,16 @@ from tensorflow import keras
 
 
 class DeepNoiseSubspace(Plugin):
-
-
-    def __init__(self, selector_network: keras.models.Model, ):
+    def __init__(
+        self,
+        selector_network: keras.models.Model,
+    ):
         self.selector_network = selector_network
         self.input_ports: Ports = {
             "eigsv": Link(),
             "eigs": Link(),
         }
         self.output_ports: Ports = {"Un": Link()}
-
 
     def execute(self) -> None:
         eigsv_batched = self.input_ports["eigsv"].value

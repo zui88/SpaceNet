@@ -5,12 +5,9 @@ from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 
 
 class ComputeRootDOA(Plugin):
-
-
     def __init__(self):
         self.input_ports: Ports = {"roots": Link()}
         self.output_ports: Ports = {"doa": Link()}
-
 
     def execute(self) -> None:
         roots_batched = self.input_ports["roots"].value

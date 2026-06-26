@@ -8,8 +8,6 @@ import numpy as np
 
 
 class SignalSynthesizer(ABC):
-
-
     def __init__(self, snr_db: float | tuple[float, float] = 30):
         self.rng = np.random.default_rng()
 
@@ -18,15 +16,16 @@ class SignalSynthesizer(ABC):
 
         self.sigma2 = np.power(10, -snr_db / 10)
 
-
     @abstractmethod
     def generate(self, *args, **kwargs):
         pass
 
-
     def get_rand(self, N: int, M: int = None):
-        return self.rng.standard_normal(N) if M is None else self.rng.standard_normal((N, M))
-
+        return (
+            self.rng.standard_normal(N)
+            if M is None
+            else self.rng.standard_normal((N, M))
+        )
 
     def get_noise_matrix(self, dimension: int | tuple):
         """
@@ -41,11 +40,15 @@ class SignalSynthesizer(ABC):
         if isinstance(dimension, tuple):
             N = dimension[0]
             M = dimension[1]
-            w = np.sqrt(self.sigma2 / 2) * (self.get_rand(N, M) + 1j * self.get_rand(N, M))  # (NxM)
+            w = np.sqrt(self.sigma2 / 2) * (
+                self.get_rand(N, M) + 1j * self.get_rand(N, M)
+            )  # (NxM)
 
         if isinstance(dimension, int):
             N = dimension
-            w = np.sqrt(self.sigma2 / 2) * (self.get_rand(N) + 1j * self.get_rand(N))  # (N)
+            w = np.sqrt(self.sigma2 / 2) * (
+                self.get_rand(N) + 1j * self.get_rand(N)
+            )  # (N)
 
         if w is None:
             raise RuntimeError("wront dimension set!")
@@ -54,8 +57,6 @@ class SignalSynthesizer(ABC):
 
 
 class DOASignalSynthesizer(SignalSynthesizer):
-
-
     def __init__(self, array_geometry, signal_generator, *args, **kwargs):
         """
         Parameters
@@ -63,9 +64,8 @@ class DOASignalSynthesizer(SignalSynthesizer):
 
         """
         super().__init__(*args, **kwargs)
-        self.array_geometry   = array_geometry
+        self.array_geometry = array_geometry
         self.signal_generator = signal_generator
-
 
     def generate(self, thetas: np.ndarray):
         """
@@ -86,9 +86,14 @@ class DOASignalSynthesizer(SignalSynthesizer):
 
 
 class DelayDopplerSignalSynthesizer(SignalSynthesizer):
-
-
-    def __init__(self, array_geometry: ArrayGeometry, signal_generator: SignalGenerator, observ_ctx: ObservationContext, *args, **kwargs):
+    def __init__(
+        self,
+        array_geometry: ArrayGeometry,
+        signal_generator: SignalGenerator,
+        observ_ctx: ObservationContext,
+        *args,
+        **kwargs,
+    ):
         """
         Parameters
         ----------
@@ -101,15 +106,18 @@ class DelayDopplerSignalSynthesizer(SignalSynthesizer):
         self.T = observ_ctx.window_length
         self.fs = signal_generator.fs
 
-
     @property
     def n_samples(self) -> int:
         # because in general T is a float
         n = self.T * self.fs
         return int(n)
 
-
-    def generate(self, taus: tuple[float, ...] = (0.5, 3), omegas: tuple[float, ...] = (0.01, -0.03), thetas: tuple[float, ...] | None = (0, 30)):
+    def generate(
+        self,
+        taus: tuple[float, ...] = (0.5, 3),
+        omegas: tuple[float, ...] = (0.01, -0.03),
+        thetas: tuple[float, ...] | None = (0, 30),
+    ):
         M = self.array_geometry.m_antennas
         N = self.n_samples
 
@@ -122,7 +130,6 @@ class DelayDopplerSignalSynthesizer(SignalSynthesizer):
         w = self.get_noise_matrix((N, M))
         R = Q @ A + w  # (NxM)
         return R
-
 
     def generate_q(self, taus: tuple[float, ...], omegas: tuple[float, ...]):
         """
@@ -145,7 +152,7 @@ class DelayDopplerSignalSynthesizer(SignalSynthesizer):
             phase_shifted_signal = s * omegas_shift[:, k]
             pad = int(taus[k] * self.fs)
             time_shifted_signal = np.pad(phase_shifted_signal, (pad, 0))
-            transformed_signal = time_shifted_signal[0:self.n_samples]
+            transformed_signal = time_shifted_signal[0 : self.n_samples]
             signals.append(transformed_signal)
 
         Q = np.stack(signals, axis=1)
@@ -153,8 +160,6 @@ class DelayDopplerSignalSynthesizer(SignalSynthesizer):
 
 
 class DDSynthesizerWrapper:
-
-
     def __init__(self, config: DDConfig):
         self.synthesizer = DelayDopplerSignalSynthesizer(
             snr_db=config.base.snr_db,
@@ -163,10 +168,13 @@ class DDSynthesizerWrapper:
             observ_ctx=config.observ_ctx,
         )
 
-
-    def generate(self, taus: tuple[float, ...], omegas: tuple[float, ...], thetas: tuple[float, ...] | None = None):
+    def generate(
+        self,
+        taus: tuple[float, ...],
+        omegas: tuple[float, ...],
+        thetas: tuple[float, ...] | None = None,
+    ):
         return self.synthesizer.generate(taus, omegas, thetas)
-
 
     def generate_q(self, taus: tuple[float, ...], omegas: tuple[float, ...]):
         return self.synthesizer.generate_q(taus, omegas)

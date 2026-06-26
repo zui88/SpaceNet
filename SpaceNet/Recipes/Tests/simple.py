@@ -5,8 +5,6 @@ from SpaceNet.Recipes.recipe import Recipe
 
 
 class Simple(Recipe):
-
-
     def __init__(self):
         super().__init__()
 
@@ -20,28 +18,19 @@ class Simple(Recipe):
         #############################################
         # connect the plugins
         #############################################
-        self.connect_node("input", "a",
-                                 "add", "a")
-        self.connect_node("input", "b",
-                                 "add", "b")
-        self.connect_node("input", "a",
-                                 "mul", "a")
-        self.connect_node("input", "d",
-                                 "sub", "b")
+        self.connect_node("input", "a", "add", "a")
+        self.connect_node("input", "b", "add", "b")
+        self.connect_node("input", "a", "mul", "a")
+        self.connect_node("input", "d", "sub", "b")
 
-        self.connect_node("add", "result",
-                                 "mul", "b")
+        self.connect_node("add", "result", "mul", "b")
 
-        self.connect_node("mul", "result",
-                                 "sub", "a")
-        self.connect_node("mul", "result",
-                                 "output", "e")
+        self.connect_node("mul", "result", "sub", "a")
+        self.connect_node("mul", "result", "output", "e")
 
-        self.connect_node("sub", "result",
-                                 "output", "f")
+        self.connect_node("sub", "result", "output", "f")
 
-
-    def run(self, **inputs) -> dict[ID, Any] :
+    def run(self, **inputs) -> dict[ID, Any]:
         res = super().run(a=5, b=42, d=-6)
         print(f"test restult: {res}")
         return res

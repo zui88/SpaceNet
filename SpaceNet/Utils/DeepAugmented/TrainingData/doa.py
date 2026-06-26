@@ -5,13 +5,13 @@ import numpy as np
 
 
 def _generate_checked_matrix(
-        training_examples,
-        max_signal_sources,
-        doa_low,
-        doa_high,
-        min_doa_spacing,
-        rng,
-    ):
+    training_examples,
+    max_signal_sources,
+    doa_low,
+    doa_high,
+    min_doa_spacing,
+    rng,
+):
     """
     Produce a uniformly distributed training set with an ensured spacing between sources.
 
@@ -49,8 +49,7 @@ def _generate_checked_matrix(
 
         # check spacing constraint
         valid[idx] = np.all(
-            np.diff(np.sort(doa_deg_set[idx], axis=1), axis=1)
-            >= min_doa_spacing,
+            np.diff(np.sort(doa_deg_set[idx], axis=1), axis=1) >= min_doa_spacing,
             axis=1,
         )
 
@@ -58,15 +57,15 @@ def _generate_checked_matrix(
 
 
 def generate_data_set(
-        signal_generator,
-        array_geometry= None,
-        samples: int = 1_000,
-        max_signal_sources: int = 4,
-        min_signal_sources: int | None = None,
-        snr_db: tuple[float, float] | float = 30.0,
-        deg_range: tuple[float, float] = (-70.0, 70.0),
-        min_spacing: float | int = 7.5,
-        seed: int | None = 42,
+    signal_generator,
+    array_geometry=None,
+    samples: int = 1_000,
+    max_signal_sources: int = 4,
+    min_signal_sources: int | None = None,
+    snr_db: tuple[float, float] | float = 30.0,
+    deg_range: tuple[float, float] = (-70.0, 70.0),
+    min_spacing: float | int = 7.5,
+    seed: int | None = 42,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """
 
@@ -101,9 +100,7 @@ def generate_data_set(
     if min_signal_sources is None:
         min_signal_sources = max_signal_sources
     if min_signal_sources <= 0 or min_signal_sources > max_signal_sources:
-        raise ValueError(
-            "min_signal_sources must be > 0 and <= max_signal_sources."
-        )
+        raise ValueError("min_signal_sources must be > 0 and <= max_signal_sources.")
 
     if type(snr_db) is tuple:
         snr_low, snr_high = snr_db
@@ -116,15 +113,15 @@ def generate_data_set(
     if (max_signal_sources - 1) * min_spacing > (doa_high - doa_low):
         raise ValueError("Requested minimum spacing is impossible.")
 
-    rng         = np.random.default_rng(seed)
+    rng = np.random.default_rng(seed)
     doa_deg_set = _generate_checked_matrix(
-            samples,
-            max_signal_sources,
-            doa_low,
-            doa_high,
-            min_spacing,
-            rng,
-        )
+        samples,
+        max_signal_sources,
+        doa_low,
+        doa_high,
+        min_spacing,
+        rng,
+    )
     doa_rad_set = np.vectorize(np.deg2rad)(doa_deg_set)
 
     if type(snr_db) is float or type(snr_db) is int:

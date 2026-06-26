@@ -4,7 +4,9 @@ import numpy as np
 import tensorflow as tf
 
 
-type SteeringType = Callable[[np.ndarray, int], np.ndarray] | Callable[[np.ndarray], np.ndarray]
+type SteeringType = (
+    Callable[[np.ndarray, int], np.ndarray] | Callable[[np.ndarray], np.ndarray]
+)
 
 
 class ArrayGeometry(ABC):
@@ -28,11 +30,9 @@ class ArrayGeometry(ABC):
 
 
 class ULAArray(ArrayGeometry):
-
     def __init__(self, d_lambda: float = 1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.d_lambda = d_lambda
-
 
     def get_steering(
         self,
@@ -53,9 +53,7 @@ class ULAArray(ArrayGeometry):
 
         A = tf.exp(
             tf.complex(
-                tf.zeros_like(
-                    antennas_idx * tf.sin(thetas)
-                ),
+                tf.zeros_like(antennas_idx * tf.sin(thetas)),
                 np.pi * self.d_lambda * antennas_idx * tf.sin(thetas),
             )
         )
@@ -76,7 +74,6 @@ class RandomArray(ArrayGeometry):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.rng = np.random.default_rng()
-
 
     def get_steering(self, thetas: np.ndarray, axis: int = 0):
         if len(thetas) < 1:

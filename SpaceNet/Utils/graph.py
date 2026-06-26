@@ -20,24 +20,22 @@ type Connections = list[Connection]
 
 
 class Graph:
-
-
     def __init__(self):
-        self.nodes: Nodes = {"input": Multiplexer(),
-                             "output": Multiplexer()}
+        self.nodes: Nodes = {"input": Multiplexer(), "output": Multiplexer()}
         self.connections: Connections = []
         self.is_compiled: bool = False
-
 
     def register_node(self, identifier: ID, plugin: Plugin):
 
         self.nodes[identifier] = plugin
 
+    def connect_node(
+        self, source_node: ID, source_port: ID, target_node: ID, target_port: ID
+    ):
 
-    def connect_node(self, source_node: ID, source_port: ID, target_node: ID, target_port: ID):
-
-        self.connections.append(Connection(source_node, source_port, target_node, target_port))
-
+        self.connections.append(
+            Connection(source_node, source_port, target_node, target_port)
+        )
 
     def evaluate(self, **inputs) -> dict[ID, Any]:
 
@@ -48,8 +46,7 @@ class Graph:
         self.compile()
         self._execute_graph()
 
-        return { id: output.value for id, output in self.nodes["output"].outputs.items() }
-
+        return {id: output.value for id, output in self.nodes["output"].outputs.items()}
 
     def compile(self):
 
@@ -58,11 +55,15 @@ class Graph:
             self._sort_graph()
             self.is_compiled = True
 
-
     def _build_graph(self):
 
         for connection in self.connections:
-            source_node, source_port, target_node, target_port = connection.source_node, connection.source_port, connection.target_node, connection.target_port
+            source_node, source_port, target_node, target_port = (
+                connection.source_node,
+                connection.source_port,
+                connection.target_node,
+                connection.target_port,
+            )
 
             link = self.nodes[source_node].outputs.setdefault(source_port, Link())
             self.nodes[target_node].inputs[target_port] = link
@@ -74,18 +75,17 @@ class Graph:
             if target_node == "output":
                 self.nodes["output"].outputs.setdefault(target_port, Link())
 
-
     def _sort_graph(self):
 
         fulfilled_nodes = {"input"}
-        sorted_nodes = { "input": self.nodes["input"] }
+        sorted_nodes = {"input": self.nodes["input"]}
         processing_nodes = [
-            node_id
-            for node_id in self.nodes
-            if node_id not in {"input", "output"}
+            node_id for node_id in self.nodes if node_id not in {"input", "output"}
         ]
 
-        while len(sorted_nodes) < len(processing_nodes) + 1: # because the special input node is the first node in the sorted list
+        while (
+            len(sorted_nodes) < len(processing_nodes) + 1
+        ):  # because the special input node is the first node in the sorted list
             next_node = next(
                 (
                     node_id
@@ -116,7 +116,6 @@ class Graph:
 
         sorted_nodes["output"] = self.nodes["output"]
         self.nodes = sorted_nodes
-
 
     def _execute_graph(self):
 

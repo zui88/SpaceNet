@@ -6,32 +6,30 @@ import scipy
 
 
 class ClassicDelayDoppler(Plugin):
-
-
-    def __init__(self,
-                 d_sources: int,
-                 observ_ctx,
-                 signal_provider,
-                 ):
+    def __init__(
+        self,
+        d_sources: int,
+        observ_ctx,
+        signal_provider,
+    ):
         self.input_ports: Ports = {"r_sensed": Link()}
         self.output_ports: Ports = {
             "tau_est": Link(),
             "omega_est": Link(),
             "tau_grid": Link(),
             "cost_function": Link(),
-            }
+        }
 
-        self.d_sources       = d_sources
-        self.observ_ctx      = observ_ctx
+        self.d_sources = d_sources
+        self.observ_ctx = observ_ctx
         self.signal_provider = signal_provider
 
-
     def execute(self) -> None:
-        r_batched = self.input_ports['r_sensed'].value
+        r_batched = self.input_ports["r_sensed"].value
 
-        tau_batched           = []
-        omega_batched         = []
-        tau_grid_batched      = []
+        tau_batched = []
+        omega_batched = []
+        tau_grid_batched = []
         cost_function_batched = []
 
         for r in r_batched:
@@ -41,13 +39,14 @@ class ClassicDelayDoppler(Plugin):
             tau_grid_batched.append(tau)
             cost_function_batched.append(cost_function)
 
-        self.output_ports["tau_est"].value       = np.vstack(tau_batched)
-        self.output_ports["omega_est"].value     = np.vstack(omega_batched)
-        self.output_ports["tau_grid"].value      = np.vstack(tau_grid_batched)
+        self.output_ports["tau_est"].value = np.vstack(tau_batched)
+        self.output_ports["omega_est"].value = np.vstack(omega_batched)
+        self.output_ports["tau_grid"].value = np.vstack(tau_grid_batched)
         self.output_ports["cost_function"].value = np.vstack(cost_function_batched)
 
-
-    def _execute_one_step(self, r) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def _execute_one_step(
+        self, r
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
         N = r.shape[0]  # samples
         M = r.shape[1]  # antennas
@@ -62,7 +61,9 @@ class ClassicDelayDoppler(Plugin):
         # MUSIC
         ################################################################
         # --- eigendecomposition ---
-        _, Un = scipy.linalg.eigh(a=R_cov, subset_by_index=[0, (N - self.d_sources - 1)])
+        _, Un = scipy.linalg.eigh(
+            a=R_cov, subset_by_index=[0, (N - self.d_sources - 1)]
+        )
 
         # --- MUSIC scan over tau; building the cost function ---
         T_obs = self.observ_ctx.window_length
@@ -79,8 +80,14 @@ class ClassicDelayDoppler(Plugin):
         dS = gradient(S, w, numpy=True)  # (Nx1)
 
         # --- compute B because it's not dependent on tau ---
-        B_mat = np.real(np.array([[S.conj().T @ S, -S.conj().T @ dS],
-                                  [-dS.conj().T @ S, dS.conj().T @ dS]]))
+        B_mat = np.real(
+            np.array(
+                [
+                    [S.conj().T @ S, -S.conj().T @ dS],
+                    [-dS.conj().T @ S, dS.conj().T @ dS],
+                ]
+            )
+        )
 
         # --- go over the grid and compute the cost function to be minimized ---
         for i, tau in enumerate(tau_grid):
@@ -91,14 +98,14 @@ class ClassicDelayDoppler(Plugin):
 
             lambdas, gammas = eigh(a=A_mat, b=B_mat, subset_by_index=[0, 1])
 
-            lambda_min       = lambdas[0]
+            lambda_min = lambdas[0]
             cost_function[i] = lambda_min
-            gamma_min        = gammas[:, 0]
-            omega_grid[i]    = gamma_min[1] / gamma_min[0]
+            gamma_min = gammas[:, 0]
+            omega_grid[i] = gamma_min[1] / gamma_min[0]
 
         # --- results ---
-        idx       = np.argsort(cost_function)[:self.d_sources]
-        tau_est   = tau_grid[idx]
+        idx = np.argsort(cost_function)[: self.d_sources]
+        tau_est = tau_grid[idx]
         omega_est = omega_grid[idx]
 
         return tau_est, omega_est, tau_grid, cost_function

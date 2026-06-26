@@ -4,8 +4,6 @@ from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 
 
 class RootSelector(Plugin):
-
-
     def __init__(self, eps: float = 1e-5):
         self.eps = eps
         self.input_ports: Ports = {
@@ -13,7 +11,6 @@ class RootSelector(Plugin):
             "k_est": Link(),
         }
         self.output_ports: Ports = {"roots": Link()}
-
 
     def execute(self) -> None:
         roots_batched = self.input_ports["roots"].value

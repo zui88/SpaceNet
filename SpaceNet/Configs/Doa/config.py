@@ -9,9 +9,5 @@ type DeepAugmentedConfig = deep_augmented.Config
 
 
 class Config(Struct, frozen=True):
-    base: BaseConfig = field(
-        default_factory=base.Config
-    )
-    deep_augmented: DeepAugmentedConfig = field(
-        default_factory=deep_augmented.Config
-    )
+    base: BaseConfig = field(default_factory=base.Config)
+    deep_augmented: DeepAugmentedConfig = field(default_factory=deep_augmented.Config)

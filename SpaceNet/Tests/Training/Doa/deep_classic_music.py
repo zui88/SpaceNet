@@ -9,24 +9,28 @@ from tensorflow import keras
 
 
 def train():
-    config.base.d_sources        = 4
+    config.base.d_sources = 4
     config.base.signal.n_samples = 200
-    config.base.array.antennas   = 8
-    config.base.snr_db           = (-5, 30)
+    config.base.array.antennas = 8
+    config.base.snr_db = (-5, 30)
 
     R, doa = generate_data_set(
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,
         deg_range=(-70.0, 70.0),
-        min_spacing=5, # 15 grad guy
+        min_spacing=5,  # 15 grad guy
         samples=100_000,
         max_signal_sources=config.base.d_sources,
         snr_db=config.base.snr_db,
     )
-    R_train, R_test, doa_train, doa_test = train_test_split(R, doa, test_size=0.12, random_state=42)
+    R_train, R_test, doa_train, doa_test = train_test_split(
+        R, doa, test_size=0.12, random_state=42
+    )
 
-    model                            = create_deep_classic_music(config, define_models=True)
-    history: keras.callbacks.History = model.capability_registry[DeepAugment].train_models(
+    model = create_deep_classic_music(config, define_models=True)
+    history: keras.callbacks.History = model.capability_registry[
+        DeepAugment
+    ].train_models(
         R_train,
         doa_train,
         (R_test, doa_test),
@@ -42,5 +46,6 @@ def train():
 
 if __name__ == "__main__":
     import os
+
     print(os.getcwd())
     train()

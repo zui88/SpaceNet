@@ -1,5 +1,4 @@
 class DummyScaler:
-
     @staticmethod
     def fit(X):
         pass

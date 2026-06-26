@@ -2,12 +2,9 @@ from SpaceNet.Plugins.plugin import Ports, Plugin
 
 
 class Multiplexer(Plugin):
-
-
     def __init__(self):
         self.input_ports: Ports = {}
         self.output_ports: Ports = {}
-
 
     def execute(self) -> None:
 

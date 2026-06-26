@@ -11,56 +11,57 @@ import keras
 
 
 class DeepClassicDOA(Recipe):
-
-
     def __init__(
-            self,
-            d_sources: int,
-            steering: SteeringType,
-            scan_range: int,
-            surrogate_network: keras.models.Model,
-            finder_network: keras.models.Model,
-            eps: float = 1.0,
-            **_):
+        self,
+        d_sources: int,
+        steering: SteeringType,
+        scan_range: int,
+        surrogate_network: keras.models.Model,
+        finder_network: keras.models.Model,
+        eps: float = 1.0,
+        **_,
+    ):
 
         super().__init__()
 
         #############################################
         # register the plugins
         #############################################
-        self.register_node("estimated_rcov", DeepEstimateRcov(
-            surrogate_network,
-            eps,
-        ))
+        self.register_node(
+            "estimated_rcov",
+            DeepEstimateRcov(
+                surrogate_network,
+                eps,
+            ),
+        )
         self.register_node("evd", EVD())
         self.register_node("noise_subspace", NoiseSubspace(d_sources))
-        self.register_node("inv_spec", ComputePseudoInverseSpectrum(
-            scan_range,
-            steering,
-        ))
-        self.register_node("peak_finder", DeepPeakConverter(
-            finder_network,
-        ))
+        self.register_node(
+            "inv_spec",
+            ComputePseudoInverseSpectrum(
+                scan_range,
+                steering,
+            ),
+        )
+        self.register_node(
+            "peak_finder",
+            DeepPeakConverter(
+                finder_network,
+            ),
+        )
 
         #############################################
         # connect the plugins
         #############################################
-        self.connect_node("input", "r_sensed",
-                          "estimated_rcov", "r_sensed")
+        self.connect_node("input", "r_sensed", "estimated_rcov", "r_sensed")
 
-        self.connect_node("estimated_rcov", "surrogate_rcov",
-                          "evd", "r_cov")
+        self.connect_node("estimated_rcov", "surrogate_rcov", "evd", "r_cov")
 
-        self.connect_node("evd", "eigs_v",
-                          "noise_subspace", "eigs_v")
+        self.connect_node("evd", "eigs_v", "noise_subspace", "eigs_v")
 
-        self.connect_node("noise_subspace", "Un",
-                          "inv_spec", "Un")
+        self.connect_node("noise_subspace", "Un", "inv_spec", "Un")
 
-        self.connect_node("inv_spec", "spectrum",
-                          "peak_finder", "spectrum")
+        self.connect_node("inv_spec", "spectrum", "peak_finder", "spectrum")
 
-        self.connect_node("peak_finder", "value",
-                          "output", "doa")
-        self.connect_node("inv_spec", "spectrum_obj",
-                          "output", "spectrum_obj")
+        self.connect_node("peak_finder", "value", "output", "doa")
+        self.connect_node("inv_spec", "spectrum_obj", "output", "spectrum_obj")
