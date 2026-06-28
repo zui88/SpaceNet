@@ -44,7 +44,8 @@ def create_delay_doppler_music(configs: Config, kind: str = "fast") -> Engine[Re
 
 
 def create_deep_doppler_music(
-    configs: Config, define_models: bool = False
+    configs: Config | None = None,
+    define_models: bool = False,
 ) -> Engine[RetDD]:
 
     defined_models = None

@@ -14,7 +14,7 @@ def doa():
     ##################################################
     # generate the signal
     ##################################################
-    R, doa = generate_data_set(
+    r, doa = generate_data_set(
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,
         deg_range=(-70.0, 70.0),
@@ -29,7 +29,7 @@ def doa():
     ##################################################
     # deep augmented classic music engine
     ##################################################
-    doa_ret: RetDoa = deep_music_engine.estimate(r_sensed=R)
+    doa_ret: RetDoa = deep_music_engine.estimate(r_sensed=r)
     doa_result: Doa = doa_ret[0]
     print("deep augmented classic music: ", np.rad2deg(doa_result.thetas))
 
@@ -41,4 +41,7 @@ def doa():
 
 
 if __name__ == "__main__":
+    import os
+    print(os.getcwd())
+    os.chdir("./DaDoa")
     doa()

@@ -17,7 +17,7 @@ def train():
     config.base.snr_db = (10, 40.0)
 
     R, dd = generate_data_set(
-        training_examples=2_000,
+        training_examples=10_000,
         min_delay_separation=0.5,
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,

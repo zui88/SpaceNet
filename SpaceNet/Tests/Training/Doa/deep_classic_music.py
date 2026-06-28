@@ -34,7 +34,7 @@ def train():
         R_train,
         doa_train,
         (R_test, doa_test),
-        batch_size=100,
+        batch_size=32,
         epochs=100,
         learning_rate=0.001,
         patience=8,

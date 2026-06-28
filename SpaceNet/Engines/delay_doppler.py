@@ -22,7 +22,7 @@ class DelayDopperEngine(Engine[RetDD]):
         self.recipe: Recipe | None = None
         self.capability_registry: CapabilityRegistryType = {}
         self.recipe_cls: type[Recipe] = recipe_cls
-        self.config: DDConfig = config
+        self.configs: DDConfig = config
 
         self.dispatcher: dict[type[Recipe], Callable[[], Recipe]] = {
             ClassicDelayDopplerFast: self._construct_classic_dd_fast,
@@ -49,16 +49,16 @@ class DelayDopperEngine(Engine[RetDD]):
         if models is None:
             raise NotImplementedError("no models registered yet")
 
-        d_sources = self.config.base.d_sources
+        d_sources = self.configs.base.d_sources
         if d_sources is not None:
             return DeepDelayDoppler(
                 d_sources,
-                self.config.base.scan_range,
-                self.config.base.signal_provider,
-                self.config.observ_ctx,
+                self.configs.base.scan_range,
+                self.configs.base.signal_provider,
+                self.configs.observ_ctx,
                 models["surrogate"],
                 models["finder"],
-                self.config.deep_augmented.eps_rcov,
+                self.configs.deep_augmented.eps_rcov,
             )
         else:
             raise NotImplementedError(
@@ -66,13 +66,13 @@ class DelayDopperEngine(Engine[RetDD]):
             )
 
     def _construct_classic_dd_fast(self) -> Recipe:
-        d_sources = self.config.base.d_sources
+        d_sources = self.configs.base.d_sources
 
         if d_sources is not None:
             return ClassicDelayDopplerFast(
                 d_sources=d_sources,
-                observ_ctx=self.config.observ_ctx,
-                signal_provider=self.config.base.signal_provider,
+                observ_ctx=self.configs.observ_ctx,
+                signal_provider=self.configs.base.signal_provider,
             )
         else:
             raise NotImplementedError(
@@ -80,14 +80,14 @@ class DelayDopperEngine(Engine[RetDD]):
             )
 
     def _construct_classic_dd(self) -> Recipe:
-        d_sources = self.config.base.d_sources
+        d_sources = self.configs.base.d_sources
 
         if d_sources is not None:
             return ClassicDelayDoppler(
                 d_sources=d_sources,
-                scan_range=self.config.base.scan_range,
-                observation_context=self.config.observ_ctx,
-                signal_provider=self.config.base.signal_provider,
+                scan_range=self.configs.base.scan_range,
+                observation_context=self.configs.observ_ctx,
+                signal_provider=self.configs.base.signal_provider,
             )
         else:
             raise NotImplementedError(
