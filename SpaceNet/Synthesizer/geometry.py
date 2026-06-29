@@ -43,9 +43,6 @@ class ULAArray(ArrayGeometry):
         A.shape = (antennas, sources) for axis == 0
         A.shape = (sources, antennas) for axis == 1
         """
-
-        thetas = tf.convert_to_tensor(thetas, dtype=tf.float32)
-
         antennas_idx = tf.cast(
             tf.range(self.m_antennas)[:, None],
             tf.float32,

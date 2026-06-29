@@ -24,19 +24,23 @@ class SignalGenerator(ABC):
         self.t = np.arange(0, self.T, 1 / self.fs)
 
     @property
-    def n_samples(self):
+    def n_samples(self) -> int:
         if self.n_samples_ is None:
-            n = self.T * self.fs
+            n = int(self.T * self.fs)
         else:
             n = self.n_samples_
         return n
 
     @abstractmethod
-    def function(self, x):
+    def function(self, x) -> np.ndarray:
         pass
 
     def generate(
-        self, T_pad: float = None, n_samples: int = None, array: int = 1, axis: int = 0
+        self,
+        T_pad: float | None = None,
+        n_samples: int | None = None,
+        array: int = 1,
+        axis: int = 0,
     ):
         """
         PARAMETER
@@ -45,12 +49,13 @@ class SignalGenerator(ABC):
             when a pad value is given the generated signal is filled up with zeros to this value
 
         array : int
-            How many arrays the function returns.  When array > 1 the function returns array clones of the signal; f.e. (SamplesxArray), where Samples = T * fs
+            How many arrays the function returns.  When array > 1 the function returns array clones of the signal; f.e. (Samples,Array), where Samples = T * fs
         """
         s = self.function(self.t)
         s = self.conditional_pad(s, T_pad, n_samples)
 
         if array > 1:
+            # todo: passing t is just correct for doa random, also random uses internally self.n_samples and not the argument
             s = np.vstack(np.array([self.function(self.t) for _ in range(array)]))
 
         if axis == 1:
@@ -72,7 +77,7 @@ class SignalGenerator(ABC):
 
         return s
 
-    def gradient(self, T_pad: float = None, n_samples: int = None):
+    def gradient(self, T_pad: float | None = None, n_samples: int | None = None):
         x = tf.Variable(self.t)
         x = tf.cast(x, tf.complex64)
         with tf.GradientTape() as tape:

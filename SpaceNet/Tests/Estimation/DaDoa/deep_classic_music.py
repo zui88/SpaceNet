@@ -42,6 +42,7 @@ def doa():
 
 if __name__ == "__main__":
     import os
+
     print(os.getcwd())
-    os.chdir("./DaDoa")
+    # os.chdir("./DaDoa")
     doa()

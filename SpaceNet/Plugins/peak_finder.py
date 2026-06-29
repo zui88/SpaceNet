@@ -32,6 +32,8 @@ class LocalPeaks(Finder):
 
             peaks.append(peaks_idx)
 
+        return tf.convert_to_tensor(peaks, dtype=tf.int32)
+
 
 class DelayDopplerIdx(Finder):
     def find(self, spectrum: tf.Tensor, d_est: tf.Tensor) -> tf.Tensor:

@@ -33,7 +33,7 @@ def create_deep_music_engine(
     model_names: list[str],
     defined_models: dict[str, keras.Model] | None,
 ) -> Engine[RetDoa] | Engine[RetDD]:
-    #todo: configurable
+    # todo: configurable
     configs_load_save_path = "configs"
     if configs is not None:
         configDecoder = JsonEncoderDecoder(configs)

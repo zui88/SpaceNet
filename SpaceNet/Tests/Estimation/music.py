@@ -13,7 +13,14 @@ def doa():
     ##################################################
     # generate the signal
     ##################################################
-    thetas = np.deg2rad([-30, 10, 25, 58])
+    thetas = np.deg2rad([-30, 10, 75, -68])
+
+    corr_coef_12 = 0.31
+    corr_coef_13 = 0.92
+    corr_coef_14 = 0.01
+    corr_coef_23 = 0.01
+    corr_coef_24 = 0.51
+    corr_coef_34 = 0.01
 
     array_geometry = ULAArray(antennas=config.base.array.antennas)
     r_sensed = DOASignalSynthesizer(
@@ -22,6 +29,14 @@ def doa():
         snr_db=config.base.snr_db,
     ).generate(
         thetas,
+        correlation_matrix=np.array(
+            [
+                [1.0, corr_coef_12, corr_coef_13, corr_coef_14],
+                [corr_coef_12, 1.0, corr_coef_23, corr_coef_24],
+                [corr_coef_13, corr_coef_23, 1.0, corr_coef_34],
+                [corr_coef_14, corr_coef_24, corr_coef_34, 1.0],
+            ]
+        ),
     )
     print("true thetas: ", np.rad2deg(thetas))
 
