@@ -1,4 +1,4 @@
-from Synthesizer.signal import ObservationContext
+from SpaceNet.Synthesizer.signal import ObservationContext
 from ..deep_augmented import Config as DeepAugmentedConfig
 from ..base import Config as BaseConfig
 

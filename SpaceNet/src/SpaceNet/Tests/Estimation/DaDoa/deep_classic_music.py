@@ -21,7 +21,7 @@ def doa():
         min_spacing=5,  # 15 grad guy
         samples=5,
         max_signal_sources=config.base.d_sources,
-        snr_db=30,
+        snr_db=-5,
     )
 
     print("true thetas: ", np.rad2deg(doa))

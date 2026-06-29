@@ -1,8 +1,9 @@
-import numpy as np
-
 from SpaceNet.Builders.delay_doppler import create_deep_doppler_music as create_engine
 from SpaceNet.Synthesizer.synthesizer import DDSynthesizerWrapper
-from Engines.engine import Engine, RetDD, DelayDoppler
+from SpaceNet.Engines.engine import Engine, RetDD, DelayDoppler
+from SpaceNet.Configs.Doa.deep_classic import Config
+
+import numpy as np
 
 
 def estimate_delay():
@@ -12,7 +13,9 @@ def estimate_delay():
     correlation_coef = 0.01
 
     engine: Engine[RetDD] = create_engine()
-    config = engine.configs
+    config: Config = engine.configs
+
+    config.base.snr_db = 10
 
     r = DDSynthesizerWrapper(config).generate(
         delay,

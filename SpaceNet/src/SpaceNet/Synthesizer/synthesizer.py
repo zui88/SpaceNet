@@ -1,5 +1,6 @@
 from SpaceNet.Synthesizer.signal import SignalGenerator, ObservationContext
 from SpaceNet.Configs.DelayDoppler.config import Config as DDConfig
+from SpaceNet.Configs.Doa.config import Config as DoaConfig
 from SpaceNet.Synthesizer.geometry import ArrayGeometry
 
 from abc import ABC, abstractmethod
@@ -113,7 +114,7 @@ class DOASignalSynthesizer(SignalSynthesizer):
         self,
         thetas: np.ndarray,
         correlation_matrix: np.ndarray | None = None,
-    ):
+    ) -> tf.Tensor:
         """
         generate the sensed signal
 
@@ -137,6 +138,25 @@ class DOASignalSynthesizer(SignalSynthesizer):
         w = self.get_noise_matrix((A.shape[0], Q.shape[1]))
         R = A @ Q + w  # (M,D)
         return R
+
+
+class DoaSynthesizerWrapper:
+    def __init__(self, config: DoaConfig):
+        self.synthesizer = DOASignalSynthesizer(
+            snr_db=config.base.snr_db,
+            array_geometry=config.base.array_geometry,
+            signal_generator=config.base.signal_provider,
+        )
+
+    def generate(
+        self,
+        thetas: tuple[float, ...],
+        correlation_matrix: np.ndarray | None = None,
+    ) -> tf.Tensor:
+        return self.synthesizer.generate(
+            thetas=np.array(thetas),
+            correlation_matrix=correlation_matrix,
+        )
 
 
 class DelayDopplerSignalSynthesizer(SignalSynthesizer):
@@ -235,7 +255,11 @@ class DDSynthesizerWrapper:
     ):
         return self.synthesizer.generate(
             np.array(taus),
-            np.array(omegas) if omegas is not None else np.array(taus), # basically omega doesn't matter because v0.1.0 the deep dd cannot estimate omegas
+            np.array(omegas)
+            if omegas is not None
+            else np.array(
+                taus
+            ),  # basically omega doesn't matter because v0.1.0 the deep dd cannot estimate omegas
             np.array(thetas) if thetas is not None else None,
             correlation_matrix=correlation_matrix,
         )
