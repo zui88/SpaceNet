@@ -102,7 +102,7 @@ class DelaySpectrum(Plugin):
         A_flat = tf.reshape(A_mat, [-1, 2, 2])
 
         def solve_generalized_eigh(a_mat):
-            lambdas, gammas = eigh(a=a_mat, b=B, subset_by_index=[0, 1])
+            lambdas, gammas = eigh(a=a_mat, b=B, subset_by_index=(0, 1))
             gamma_min = gammas[:, 0]
             omega = tf.math.real(gamma_min[1] / gamma_min[0])
             return lambdas[0], tf.cast(omega, dtype=tf.float32)

@@ -96,7 +96,7 @@ class ClassicDelayDoppler(Plugin):
             G = np.stack([S * v_tau, -dS * v_tau], axis=1)
             A_mat = np.real(G.conj().T @ Un @ Un.conj().T @ G)
 
-            lambdas, gammas = eigh(a=A_mat, b=B_mat, subset_by_index=[0, 1])
+            lambdas, gammas = eigh(a=A_mat, b=B_mat, subset_by_index=(0, 1))
 
             lambda_min = lambdas[0]
             cost_function[i] = lambda_min
