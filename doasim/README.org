@@ -1,0 +1,134 @@
+#+TITLE: MUSIC Evaluator Application
+
+This application is to drive Direction Of Arrival (DoA) or Delay
+Doppler (DD) simulations.
+
+The concepts are designed in a object oriented manner, in which the
+aspects are /orthogonal/ to.  That means, each
+dimension can be set independently to fetch the desired output.
+Three dimensions are defined:
+
+- Problem :: The Problem describes the eventual parameters to be
+  estimated by an estimator.
+
+  + doa :: Estimates Direction Of Arrival
+  + delay-doppler :: Estimates Delay Doppler
+
+- Estimator :: The Estimator is the kind of algorithm that will be
+  driven underneath.
+
+  + classic-music :: Defines the original proposed algorithm
+  + root-music :: Defines the /state of the art/ MUSIC algorithm
+  + da-classic-music :: Defines a mixed approach where Model
+    driven componets and Machine Learning components are tied together.
+  + da-root-music :: 
+
+- Experiment :: Experiments are commands/subcommands.  Each command
+  has own arguments and options.
+
+  + estimation :: Takes one list of ground truth that the
+    engine will try to estimate.
+  + simulation :: Runs one Monte Carlo experiment.
+  + benchmark :: Runs multible simulations of different
+    estimators but within the same problem.
+  + plot :: 
+
+
+The Command Line Interface (CLI) can be asked due to
+
+#+begin_src sh
+music <common-options>
+#+end_src
+
+- common-options ::
+  - help :: prints the CLI usage end exit
+  - version :: prints the used SpaceNet version and exit
+
+
+or 
+
+#+begin_src sh
+music <experiment> <arguments> [options...]
+#+end_src
+
+/Estimator/ and /Problem/ are part of the arguments for the experiment
+command.  They describe the specific algorithm to be choosen.  Not all
+commands support all combinations.  For example the combination =music
+simulation root-music doa [options...]= is defined but =music simulation
+root-music delay-doppler [options...]= it is not.
+
+Every results of an experiment is captured by its /experiment-id/.
+For post processing to refer to a distinct experiment the
+experiment-id is being used.
+
+* Experiment
+
+Experiments are subcommands and, therefore, have its own set of
+arguments and options to be evaluated.  An experiment questions what
+kind of result gets produced at the end.
+
+** Estimation
+
+Takes one list of ground truth that the engine will try to estimate.
+
+#+begin_src sh
+music estimation <estimator> <problem>
+#+end_src
+** Simulation
+
+*** Parameters
+
+** Plotting
+
+Prints the results in a scatter, plot, ... graphics.  To be able to
+plot anything interessting, there must have been run a simulation or
+benchmark before.
+
+#+begin_src sh
+music plot <experiment-id>
+#+end_src
+
+It can be ask if there has been simulation runs before that can be plottet.
+
+#+begin_src sh
+music plot list
+#+end_src
+
+
+
+
+Plotting relies on the /interface/ of a previous executed simulation.  
+
+The prototype is designed as shown
+
+#+begin_src sh
+music plot <kind> <simulation-file>
+#+end_src
+
+- kind :: Which aspect of the run simulation should be under investigation
+  + spectrum
+  + rmse
+  + runtime
+
+
+
+
+* Estimator
+
+Argument
+
+* Problem
+
+Argument
+
+** DoA
+
+#+begin_src sh
+music doa estimation 45 -36
+#+end_src
+
+** Delay Doppler
+
+* Options
+
+* Installation

@@ -1,0 +1,6 @@
+This project uses /uv/ as package and dependency manager.  To get
+startet the easiest way is to get /uv/ and put
+
+#+begin_src sh
+uv init
+#+end_src
