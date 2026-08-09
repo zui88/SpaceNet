@@ -18,6 +18,6 @@ dependencies = [
 
 [tool.uv.workspace]
 members = [
-    "music",
+    "Music",
     "SpaceNet",
 ]

@@ -1,3 +1,4 @@
+from SpaceNet.Utils.DeepAugmented.TrainingData.doa import generate_data_set
 from SpaceNet.Synthesizer.synthesizer import DoaSynthesizerWrapper
 from SpaceNet.Configs.base import SignalKind, ArrayKind
 from SpaceNet.Configs.Doa.config import Config
@@ -24,11 +25,58 @@ from rich import print
 
 
 def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
-    pass
+    verbose: bool = False
+    if "verbose" in ctx.obj:
+        verbose = ctx.obj["verbose"]
+    
+    music_engine: Engine[RetDoa] = None
+    config: Config = Config()
 
+    match ctx.obj["estimator"]:
+        case "cm":
+            print("classic music")
+            config = alter_config_from_app_options(ctx, config)
+            config.base.signal.kind = SignalKind.RANDOM_SIGNAL
+            config.base.array.kind = ArrayKind.ULA_ARRAY
+            config.base.signal.n_samples = 100
+            config.base.d_sources = 4  # MAGIC NUMBER :(
+            music_engine = create_classic_music(config)
 
-def get_config(engine: Engine[RetDoa]) -> Config:
-    pass
+        case "rm":
+            print("root music")
+            config = alter_config_from_app_options(ctx, config)
+            config.base.signal.kind = SignalKind.RANDOM_SIGNAL
+            config.base.array.kind = ArrayKind.ULA_ARRAY
+            config.base.signal.n_samples = 100
+            config.base.d_sources = 4
+            music_engine = create_root_music(config)
+
+        case "dacm":
+            print("deep augmented classic music")
+            app_dir = Path(os.getcwd())
+            if "da_selector" in ctx.obj and ctx.obj["da_selector"]:
+                os.chdir(app_dir / "Music" / "da-cl-mu-da-selector")
+                music_engine = create_deep_classic_music(kind="sl")
+            else:
+                os.chdir(app_dir / "Music" / "da-cl-mu")
+                music_engine = create_deep_classic_music()
+            config = music_engine.configs
+
+        case "darm":
+            print("deep augmented root music")
+            app_dir = Path(os.getcwd())
+            os.chdir(app_dir / "Music" / "da-rm-mu")
+            music_engine: Engine[RetDoa] = create_deep_root_music()
+            config = music_engine.configs
+
+        case _:
+            print(f"estimator [red]{ctx.obj['estimator']}[/red] not supported")
+            sys.exit("close application")
+
+    config = alter_config_from_app_options(ctx, config)
+    music_engine.configs = config
+
+    return music_engine
 
 
 def alter_config_from_app_options(ctx: typer.Context, config: Config) -> Config:
@@ -123,26 +171,30 @@ def estimation(
             print("deep augmented classic music")
             app_dir = Path(os.getcwd())
             if da_selector:
-                os.chdir(app_dir / "doasim" / "da-cl-mu-da-selector")
+                os.chdir(app_dir / "Music" / "da-cl-mu-da-selector")
                 music_engine: Engine[RetDoa] = create_deep_classic_music(kind="sl")
             else:
-                os.chdir(app_dir / "doasim" / "da-cl-mu")
+                os.chdir(app_dir / "Music" / "da-cl-mu")
                 music_engine: Engine[RetDoa] = create_deep_classic_music()
             config: Config = music_engine.configs
 
             if len(ground_truth) != config.base.d_sources:
-                exit_application(f"[red]thetas len must be {config.base.d_sources}[/red]")
+                exit_application(
+                    f"[red]thetas len must be {config.base.d_sources}[/red]"
+                )
 
             config = alter_config_from_app_options(ctx, config)
 
         case "darm":
             print("deep augmented root music")
             app_dir = Path(os.getcwd())
-            os.chdir(app_dir / "doasim" / "da-rm-mu")
+            os.chdir(app_dir / "Music" / "da-rm-mu")
             music_engine: Engine[RetDoa] = create_deep_root_music()
             config: Config = music_engine.configs
             if len(ground_truth) != config.base.d_sources:
-                exit_application(f"[red]thetas len must be {config.base.d_sources}[/red]")
+                exit_application(
+                    f"[red]thetas len must be {config.base.d_sources}[/red]"
+                )
 
         case _:
             print(f"estimator [red]{ctx.obj['estimator']}[/red] not supported")
@@ -151,85 +203,100 @@ def estimation(
     signal_synthesizer = DoaSynthesizerWrapper(config)
     r = signal_synthesizer.generate(tuple(ground_truth))
 
-    ret = music_engine.estimate(r_sensed=r[None, :])
-    print("estimated values: {}".format(np.rad2deg(ret[0].thetas)))
+    doa_ret = music_engine.estimate(r_sensed=r[None, :])
+    print("estimated values: {}".format(np.rad2deg(doa_ret[0].thetas)))
 
 
 @app.command()
 def simulation(
     ctx: typer.Context,
-    thetas: list[float],
     da_selector: Annotated[
         bool,
         typer.Option(
             help="Will be parsed just in DA classical MUSIC estimator.  Either using deep augmented noise-signal selector or classical formulation.",
         ),
     ] = False,
-    samples: Annotated[
+    experiments: Annotated[
         int,
         typer.Option(
-            "--samples",
-            "-s",
-            help="The number of samples that is going to drive the experiment.",
+            "--experiments",
+            "-e",
+            help="The number of experiments that is going to drive the experiment.",
         ),
-    ] = 5000,
+    ] = 100,
     deg_range: Annotated[
-        tuple[float],
+        tuple[float, float],
         typer.Option(
-            "--deg-range",
+            "--range",
             "-r",
             help="Minimum and maximum angle of arrival in degrees.",
         ),
     ] = (-70.0, 70.0),
+    deg_space: Annotated[
+        float,
+        typer.Option(
+            "--space",
+            "-s",
+            help="Minimum space between impinging signals in degrees.",
+        ),
+    ] = 5,  # 15 grad guy
 ):
     """
-    Runs one Monte-Carlo experiment.
+    Run one Monte-Carlo experiment.
     """
+    ctx.obj["da_selector"] = da_selector
+
     def check_user_options(
-            samples,
-            deg_range: tuple[float],
-            ) -> None:
+        experiments: int,
+        deg_range: tuple[float, float],
+        deg_space: float,
+    ) -> None:
         MAX_SAMPLES = 100_000
-        if samples < 1 or samples > MAX_SAMPLES:
-            exit_application(f"Amount of samples not supported [red]{samples}[/red]")
+        if experiments < 1 or experiments > MAX_SAMPLES:
+            exit_application(
+                f"Amount of experiments not supported [red]{experiments}[/red]"
+            )
 
-        if len(deg_range) != 2:
-            exit_application(f"deg-range must be a tuple of (min, max)")
-        if deg_range[0] < -90 or deg_range[1] > 90:
-            exit_application(f"deg-range out of range [red]{deg_range[0]}[/red], [red]{deg_range[1]}[/red]")
+        if deg_range[0] > deg_range[1] or deg_range[0] < -90 or deg_range[1] > 90:
+            exit_application(
+                f"deg-range out of range min: [red]{deg_range[0]}[/red], max: [red]{deg_range[1]}[/red]"
+            )
 
+        if deg_space >= 180:
+            exit_application(f"deg-space too high [red]{deg_space}[/red]")
 
     check_user_options(
-        samples,
+        experiments,
         deg_range,
-        )
+        deg_space,
+    )
 
     music_engine: Engine[RetDoa] = get_music_engine(ctx)
-    config: Config = get_config(music_engine)
-    config = alter_config_from_app_options(ctx, config)
-    
+    config: Config = music_engine.configs
+
     r, doa = generate_data_set(
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,
         deg_range=deg_range,
-        min_spacing=5,  # 15 grad guy
-        samples=samples,
+        min_spacing=deg_space,
+        samples=experiments,
         max_signal_sources=config.base.d_sources,
         snr_db=config.base.snr_db,
     )
 
-    ret: RetDoa = music_engine.estimate(r_sensed=r)
+    doa_ret: RetDoa = music_engine.estimate(r_sensed=r)
     doa_result: Doa = doa_ret[0]
-    loss_function: Loss = RMSPELoss()
-    loss_array = loss_function.compute_error(doa, doa_result._thetas)
+    loss: Loss = RMSPELoss()
+    loss_array = loss.loss(doa, doa_result._thetas)
     loss_mean = np.mean(loss_array)
     print(f"loss mean: {loss_mean}")
 
 
 @app.command()
 def benchmark():
-    """
-    Takes one list of ground truth that the engine will try to estimate.
+    """Runs multible simulations of different estimators.  Each
+    simulation will be plotted.
+
     """
     print("not implemented yet")
 

@@ -69,14 +69,20 @@ kind of result gets produced at the end.
 
 ** Estimation
 
-Takes one list of ground truth that the engine will try to estimate.
+Takes one list of ground truth that the engine will estimate.
 
 #+begin_src sh
 music estimation <estimator> <problem>
 #+end_src
+
 ** Simulation
 
-*** Parameters
+Runs one Monte-Carlo experiment.  
+
+** Benchmark
+
+Runs multible simulations of different estimators but within the same
+problem.
 
 ** Plotting
 
