@@ -25,6 +25,9 @@ from SpaceNet.Utils.DeepAugmented.Networks.DeepRoot.rcov import (
 )
 from SpaceNet.Builders.utils import build_networks, create_deep_music_engine
 
+from pathlib import Path
+import os
+
 
 def create_classic_music(configs: DoaConfig.Config) -> Engine[RetDoa]:
     """
@@ -54,6 +57,7 @@ def create_deep_classic_music(
     configs: DoaConfig.Config | None = None,
     define_models: bool = False,
     kind: str = "ws",
+    config_dir: Path = Path(os.getcwd()),
 ) -> Engine[RetDoa]:
     """
 
@@ -97,7 +101,7 @@ def create_deep_classic_music(
                     ),
                 )
             engine = create_deep_music_engine(
-                configs, DoaEngine, DeepClassicDOA, model_names, defined_models
+                configs, DoaEngine, DeepClassicDOA, model_names, defined_models, config_dir
             )
 
         case _:
@@ -120,7 +124,7 @@ def create_deep_classic_music(
                     ),
                 )
             engine = create_deep_music_engine(
-                configs, DoaEngine, DeepClassicDOA_WS, model_names, defined_models
+                configs, DoaEngine, DeepClassicDOA_WS, model_names, defined_models, config_dir
             )
 
     _check_maybe_throw_engine_type(engine)
@@ -136,6 +140,7 @@ def create_deep_root_music(
     configs: DoaConfig.Config | None = None,
     define_models: bool = False,
     activation_value: float = 0.3,
+    config_dir: Path = Path(os.getcwd()),
 ) -> Engine[RetDoa]:
     """
 
@@ -165,7 +170,7 @@ def create_deep_root_music(
         )
 
     engine = create_deep_music_engine(
-        configs, DoaEngine, DeepRootDOA, ["rcov"], defined_models
+        configs, DoaEngine, DeepRootDOA, ["rcov"], defined_models, config_dir
     )
 
     _check_maybe_throw_engine_type(engine)

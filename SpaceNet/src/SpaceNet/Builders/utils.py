@@ -14,6 +14,8 @@ from tensorflow import keras
 
 from typing import Callable, Any
 
+from pathlib import Path
+
 
 def build_networks(
     names: tuple[str, ...],
@@ -32,9 +34,9 @@ def create_deep_music_engine(
     cls: type[Recipe],
     model_names: list[str],
     defined_models: dict[str, keras.Model] | None,
+    config_dir: Path,
 ) -> Engine[RetDoa] | Engine[RetDD]:
-    # todo: configurable
-    configs_load_save_path = "configs"
+    configs_load_save_path = config_dir / "configs"
     if configs is not None:
         configDecoder = JsonEncoderDecoder(configs)
         configDecoder.save(configs_load_save_path)
@@ -53,7 +55,9 @@ def create_deep_music_engine(
     )
     engine = DeepEngine(configs, cls)
     engine.capability_registry[Configuration] = configDecoder
-    base_path = configs.deep_augmented.model_dir
+    # base_path = configs.deep_augmented.model_dir
+    # todo make deep v1 using Path instead of strings -> Windows, Lunux, Unix
+    base_path = str(config_dir)
     base_name = configs.deep_augmented.base_name
 
     capability = DeepAugmentV1(engine, model_names, base_name, base_path)
