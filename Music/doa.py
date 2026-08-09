@@ -80,10 +80,14 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
 
 
 def alter_config_from_app_options(ctx: typer.Context, config: Config) -> Config:
+    verbose = False
+    if "verbose" in ctx.obj:
+        verbose =  ctx.obj["verbose"]
+    
     if "snr" in ctx.obj:
         snr = ctx.obj["snr"]
         config.base.snr_db = snr
-        print(f"set snr [green]{snr}[/green]")
+        if verbose: print(f"set snr [green]{snr}[/green]")
 
     return config
 
@@ -97,6 +101,8 @@ def doa(
     verbose: Annotated[
         bool,
         typer.Option(
+            "--verbose",
+            "-v",
             help="Display verbosely",
         ),
     ] = False,
@@ -128,6 +134,7 @@ def doa(
     ctx.ensure_object(dict)
 
     ctx.obj["estimator"] = estimator
+    ctx.obj["verbose"] = verbose
 
     if snr is not None:
         ctx.obj["snr"] = snr
