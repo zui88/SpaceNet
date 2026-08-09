@@ -15,7 +15,7 @@ def estimate_delay():
     engine: Engine[RetDD] = create_engine()
     config: Config = engine.configs
 
-    config.base.snr_db = 10
+    config.base.snr_db = 20
 
     r = DDSynthesizerWrapper(config).generate(
         delay,

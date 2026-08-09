@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 
-def _generalized_eigh(
+def generalized_eigh(
     A: tf.Tensor,
     B: tf.Tensor,
     eigvals_high_to_low: bool = False,
@@ -39,7 +39,7 @@ def eigh(
     """To match a subset of 'eigh' of scipy package
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.eigh.html
     """
-    eigvals, eigvecs = _generalized_eigh(a, b) if b is not None else tf.linalg.eigh(a)
+    eigvals, eigvecs = generalized_eigh(a, b) if b is not None else tf.linalg.eigh(a)
     if subset_by_index is not None:
         idx_0, idx_1 = subset_by_index
         eigvals = eigvals[idx_0 : idx_1 + 1]

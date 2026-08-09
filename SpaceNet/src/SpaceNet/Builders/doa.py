@@ -77,11 +77,11 @@ def create_deep_classic_music(
 
     match kind:
         case "sl":
-            model_names = ["surrogate", "selector", "finder"]
+            model_names = ["surrogate", "finder", "selector"]
 
             if define_models:
                 defined_models = build_networks(
-                    ("surrogate", "finder", "selector"),
+                    tuple(model_names),
                     (build_surrogate, build_finder, build_selector),
                     (
                         {
@@ -105,7 +105,7 @@ def create_deep_classic_music(
 
             if define_models:
                 defined_models = build_networks(
-                    ("surrogate", "finder"),
+                    tuple(model_names),
                     (build_surrogate, build_finder),
                     (
                         {

@@ -19,7 +19,7 @@ def doa():
         array_geometry=config.base.array_geometry,
         deg_range=(-70.0, 70.0),
         min_spacing=5,  # 15 grad guy
-        samples=5,
+        samples=5000,
         max_signal_sources=config.base.d_sources,
         snr_db=-5,
     )

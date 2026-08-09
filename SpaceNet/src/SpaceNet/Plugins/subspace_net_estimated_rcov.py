@@ -40,14 +40,14 @@ class SubspaceNetEstimateRcov(Plugin):
         Kxx = self._compose_real_imag(Rxx_predict)
         Rzz = self._compute_hermit_psd(Kxx, eps=self.eps)
         n_sensors = Rzz.shape[2]
-        n_batch_size = Rzz.shape[0]
+        batch_size, m_antennas, n_samples = Rzz.shape
 
         self.output_ports["surrogate_rcov"].value = Rxx(
             cov_batch=Rzz,
             # pyrefly: ignore [bad-argument-type]
-            m_sensors_batch=tf.constant([n_sensors for _ in range(n_batch_size)]),
+            m_sensors_batch=tf.constant([n_sensors for _ in range(batch_size)]),
             # pyrefly: ignore [bad-argument-type]
-            n_samples_batch=tf.constant([self.n_samples for _ in range(n_batch_size)]),
+            n_samples_batch=tf.constant([n_samples for _ in range(batch_size)]),
         )
 
     @staticmethod
@@ -79,20 +79,35 @@ class SubspaceNetEstimateRcov(Plugin):
         :param r: Size: (batch_size, n_antennas, n_samples)
         :return: a set of autocovariance matrices R(tau); shape: (tau_max, 2*M, M)
         """
-        autocov_batched = []
 
-        for r in r_batched:
-            autocov_set = []
-            for i in range(self.tau):
-                Rxx, n = self._sample_autocov(r, tau=i)
-                imag = tf.math.imag(Rxx)
-                real = tf.math.real(Rxx)
-                autocov_set.append(tf.keras.ops.append(imag, real, axis=0))
+        def compute_tau(r, tau):
+            Rxx, _ = self._sample_autocov(r, tau=tau)
 
-            self.n_samples = n
-            autocov_batched.append(tf.stack(autocov_set))
+            imag = tf.math.imag(Rxx)
+            real = tf.math.real(Rxx)
 
-        return tf.stack(autocov_batched)
+            return tf.concat([imag, real], axis=0)
+
+        def compute_sample(r):
+            taus = tf.range(self.tau)
+
+            return tf.map_fn(
+                lambda tau: compute_tau(r, tau),
+                taus,
+                fn_output_signature=tf.TensorSpec(
+                    shape=(None, None),
+                    dtype=r.dtype.real_dtype,
+                ),
+            )
+
+        return tf.map_fn(
+            compute_sample,
+            r_batched,
+            fn_output_signature=tf.TensorSpec(
+                shape=(None, None, None),
+                dtype=r_batched.dtype.real_dtype,
+            ),
+        )
 
     def _compose_real_imag(self, Rxx):
         """

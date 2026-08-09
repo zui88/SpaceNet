@@ -14,10 +14,10 @@ def train():
     config.base.d_sources = 2
     config.base.array.antennas = 8
     config.base.scan_range = 200
-    config.base.snr_db = (10, 40.0)
+    config.base.snr_db = (-5, 40.0)
 
     R, dd = generate_data_set(
-        training_examples=10_000,
+        training_examples=100_000,
         min_delay_separation=0.5,
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,

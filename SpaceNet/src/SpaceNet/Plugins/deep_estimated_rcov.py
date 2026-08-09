@@ -27,12 +27,20 @@ class DeepEstimateRcov(Plugin):
         cov_real = surrogate[:, :split, :]
         cov_imag = surrogate[:, split:, :]
 
-        cov = tf.complex(cov_real, cov_imag)
-        cov = tf.matmul(cov, cov, adjoint_b=True)
-        cov = cov + tf.eye(n_sensors, dtype=cov.dtype) * self.eps_rcov
+        # alternativ approach: oberes dreieck -> spiegeln auf unten
+        # ################################################################
+        # ensures that every matrix B is hermitian and positive
+        # semidefinit even if B hasn't full rank though (I*eps)
+        #
+        # S = B x B^H + I * eps
+        #
+        # S is hermitian and positiv semidefinit
+        B = tf.complex(cov_real, cov_imag)
+        B = tf.matmul(B, B, adjoint_b=True)
+        S = B + tf.eye(n_sensors, dtype=B.dtype) * self.eps_rcov
 
         self.output_ports["surrogate_rcov"].value = Rxx(
-            cov_batch=cov,
+            cov_batch=S,
             n_samples_batch=tf.zeros((batch_size,), dtype=tf.int32),
             m_sensors_batch=tf.fill((batch_size,), n_sensors),
         )

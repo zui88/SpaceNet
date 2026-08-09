@@ -48,6 +48,10 @@ class DeepDelayDoppler(Recipe):
                 eps,
             ),
         )
+
+        #############################################
+        # register the plugins
+        #############################################
         self.register_node("evd", EVD())
         self.register_node("noise_subspace", NoiseSubspace(d_sources))
         self.register_node(
@@ -69,14 +73,9 @@ class DeepDelayDoppler(Recipe):
         # connect the plugins
         #############################################
         self.connect_node("input", "r_sensed", "estimated_rcov", "r_sensed")
-
         self.connect_node("estimated_rcov", "surrogate_rcov", "evd", "r_cov")
-
         self.connect_node("evd", "eigs_v", "noise_subspace", "eigs_v")
-
         self.connect_node("noise_subspace", "Un", "inv_spec", "Un")
-
         self.connect_node("inv_spec", "spectrum", "peak_finder", "spectrum")
-
         self.connect_node("peak_finder", "value", "output", "tau_est")
         self.connect_node("inv_spec", "spectrum_obj", "output", "spectrum_obj")

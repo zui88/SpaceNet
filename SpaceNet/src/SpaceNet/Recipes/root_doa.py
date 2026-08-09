@@ -22,6 +22,9 @@ class RootDOA(Recipe):
         self.inference_mode = inference_mode
         self.eps = eps_roots
 
+        ################################################################
+        # register nodes
+        ################################################################
         self.register_node("estimated_rcov", EstimateRcov())
         self.register_node("evd", EVD())
         self.register_node(
@@ -32,6 +35,9 @@ class RootDOA(Recipe):
         self.register_node("root_selector", RootSelector(self.eps))
         self.register_node("doa", ComputeRootDOA())
 
+        ################################################################
+        # connect nodes
+        ################################################################
         self.connect_node("input", "r_sensed", "estimated_rcov", "r_sensed")
         self.connect_node("estimated_rcov", "r_cov", "evd", "r_cov")
         self.connect_node("evd", "eigs", "signal_sources", "eigs")
@@ -41,6 +47,5 @@ class RootDOA(Recipe):
         self.connect_node("root_spec", "roots", "root_selector", "roots")
         self.connect_node("signal_sources", "d_est", "root_selector", "d_est")
         self.connect_node("root_selector", "roots", "doa", "roots")
-
         self.connect_node("doa", "doa", "output", "doa")
         self.connect_node("root_spec", "roots", "output", "roots")

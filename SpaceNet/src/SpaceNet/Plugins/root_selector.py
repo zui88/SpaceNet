@@ -8,28 +8,54 @@ class RootSelector(Plugin):
         self.eps = eps
         self.input_ports: Ports = {
             "roots": Link(),
-            "k_est": Link(),
+            "d_est": Link(),
         }
         self.output_ports: Ports = {"roots": Link()}
 
     def execute(self) -> None:
         roots_batched = self.input_ports["roots"].value
         d_est_batched = self.input_ports["d_est"].value
-        selected_roots_batched = []
 
-        for roots, k_est in zip(roots_batched, d_est_batched):
-            k_est = int(k_est.numpy())
-            if k_est <= 0:
-                selected_roots_batched.append(roots[:0])
-                continue
+        def select_roots(inputs):
+            roots, k_est = inputs
 
-            sort_idx = tf.keras.ops.argsort(tf.abs(tf.abs(roots) - 1))
+            k_est = tf.cast(k_est, tf.int32)
+
+            sort_idx = tf.argsort(tf.abs(tf.abs(roots) - 1))
             sorted_roots = tf.gather(roots, sort_idx)
-            roots_near_unit = sorted_roots[(tf.abs(sorted_roots) - 1) < self.eps]
 
-            if len(roots_near_unit) < k_est:
-                roots_near_unit = sorted_roots
+            roots_near_unit = tf.boolean_mask(
+                sorted_roots,
+                (tf.abs(sorted_roots) - 1) < self.eps,
+            )
 
-            selected_roots_batched.append(roots_near_unit[:k_est])
+            n_near_unit = tf.shape(roots_near_unit)[0]
 
-        self.output_ports["roots"].value = tf.stack(selected_roots_batched)
+            # If there are fewer near-unit roots than requested,
+            # use all sorted roots.
+            candidates = tf.cond(
+                n_near_unit < k_est,
+                lambda: sorted_roots,
+                lambda: roots_near_unit,
+            )
+
+            # k_est <= 0 -> empty tensor
+            return tf.cond(
+                k_est <= 0,
+                lambda: tf.zeros(
+                    [0],
+                    dtype=roots.dtype,
+                ),
+                lambda: candidates[:k_est],
+            )
+
+        selected_roots_batched = tf.map_fn(
+            select_roots,
+            (roots_batched, d_est_batched),
+            fn_output_signature=tf.TensorSpec(
+                shape=(None,),
+                dtype=roots_batched.dtype,
+            ),
+        )
+
+        self.output_ports["roots"].value = selected_roots_batched

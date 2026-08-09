@@ -36,6 +36,7 @@ class ClassicDelayDopplerFast(Recipe):
 
         self.connect_node("classic_delay_doppler", "tau_est", "output", "tau_est")
         self.connect_node("classic_delay_doppler", "omega_est", "output", "omega_est")
+
         self.connect_node("classic_delay_doppler", "tau_grid", "output", "tau_grid")
         self.connect_node(
             "classic_delay_doppler", "cost_function", "output", "cost_function"

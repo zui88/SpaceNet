@@ -25,6 +25,7 @@ def _compute_unambiguous_sources(eigs, n_samples, n_sensors):
 
 class SignalSources(Plugin):
     def __init__(self, d_sources: int | None = None, inference_mode: bool = True):
+        """lambda_min multiplicity: estimate the number of impinging signals traversing the array configuration."""
         self.d_sources = d_sources
         self.inference_mode = inference_mode
         self.input_ports: Ports = {"eigs": Link()}
@@ -32,20 +33,26 @@ class SignalSources(Plugin):
 
     def execute(self) -> None:
         eigs = self.input_ports["eigs"].value
-        d_est_batched = []
 
-        for eig_values, n_samples, m_sensors in zip(
-            eigs.eigs_batch,
-            eigs.n_samples_batch,
-            eigs.m_sensors_batch,
-        ):
-            d_est = self.d_sources
-            if self.inference_mode:
+        if not self.inference_mode:
+            batch_size = eigs.eigs_batch.shape[0]
+            self.output_ports["d_est"].value = tf.fill(
+                [batch_size],
+                tf.cast(self.d_sources, tf.int32),
+            )
+        else:
+            d_est_batched = []
+
+            for eig_values, n_samples, m_sensors in zip(
+                eigs.eigs_batch,
+                eigs.n_samples_batch,
+                eigs.m_sensors_batch,
+            ):
                 d_est = _compute_unambiguous_sources(
                     tf.math.real(eig_values).numpy(),
                     int(n_samples.numpy()),
                     int(m_sensors.numpy()),
                 )
-            d_est_batched.append(d_est)
+                d_est_batched.append(d_est)
 
-        self.output_ports["d_est"].value = tf.convert_to_tensor(d_est_batched)
+            self.output_ports["d_est"].value = tf.convert_to_tensor(d_est_batched)

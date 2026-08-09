@@ -11,21 +11,22 @@ class DeepNoiseSubspace(Plugin):
     ):
         self.selector_network = selector_network
         self.input_ports: Ports = {
-            "eigsv": Link(),
+            "eigs_v": Link(),
             "eigs": Link(),
         }
         self.output_ports: Ports = {"Un": Link()}
 
     def execute(self) -> None:
-        eigsv_batched = self.input_ports["eigsv"].value
+        eigs_v = self.input_ports["eigs_v"].value
         eigs = self.input_ports["eigs"].value.eigs_batch
 
         real = tf.math.real(eigs)
         imag = tf.math.imag(eigs)
-        q_batched = self.selector_network(tf.keras.ops.append(real, imag, axis=1))
-        q_batched = tf.expand_dims(q_batched, axis=-1)
-
-        self.output_ports["Un"].value = tf.complex(
-            q_batched * tf.math.real(eigsv_batched),
-            q_batched * tf.math.imag(eigsv_batched),
+        roh = self.selector_network(tf.keras.ops.append(real, imag, axis=1))
+        roh_diag = tf.linalg.diag(roh)
+        Un = tf.complex(
+            roh_diag * tf.math.real(eigs_v),
+            roh_diag * tf.math.imag(eigs_v),
         )
+
+        self.output_ports["Un"].value = Un

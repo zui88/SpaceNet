@@ -38,6 +38,7 @@ class LocalPeaks(Finder):
 class DelayDopplerIdx(Finder):
     def find(self, spectrum: tf.Tensor, d_est: tf.Tensor) -> tf.Tensor:
         sorted_idx = tf.argsort(spectrum, axis=-1)
+        # todo for dynamic d estimation
         # d_est always the same
         d = d_est[0]
         idx = sorted_idx[:, :d]

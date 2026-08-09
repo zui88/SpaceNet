@@ -64,6 +64,5 @@ class DeepClassicDOA(Recipe):
         self.connect_node("evd", "eigs", "noise_subspace", "eigs")
         self.connect_node("noise_subspace", "Un", "inv_spec", "Un")
         self.connect_node("inv_spec", "spectrum", "peak_finder", "spectrum")
-
         self.connect_node("peak_finder", "value", "output", "doa")
         self.connect_node("inv_spec", "spectrum_obj", "output", "spectrum_obj")

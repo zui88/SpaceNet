@@ -11,10 +11,13 @@ class ComputeRootDOA(Plugin):
 
     def execute(self) -> None:
         roots_batched = self.input_ports["roots"].value
-        thetas_batched = []
 
-        for roots in roots_batched:
-            root_angles = tf.keras.ops.angle(roots)
-            thetas_batched.append(tf.keras.ops.arcsin(root_angles / np.pi))
+        thetas_batched = tf.math.asin(
+            tf.math.angle(roots_batched)
+            / tf.constant(
+                np.pi,
+                dtype=roots_batched.dtype.real_dtype,
+            )
+        )
 
-        self.output_ports["doa"].value = tf.stack(thetas_batched)
+        self.output_ports["doa"].value = thetas_batched
