@@ -28,13 +28,14 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
     verbose: bool = False
     if "verbose" in ctx.obj:
         verbose = ctx.obj["verbose"]
-    
+
     music_engine: Engine[RetDoa] = None
     config: Config = Config()
 
     match ctx.obj["estimator"]:
         case "cm":
-            if verbose: print("classic music")
+            if verbose:
+                print("classic music")
             config = alter_config_from_app_options(ctx, config)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
@@ -43,7 +44,8 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
             music_engine = create_classic_music(config)
 
         case "rm":
-            if verbose: print("root music")
+            if verbose:
+                print("root music")
             config = alter_config_from_app_options(ctx, config)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
@@ -52,7 +54,8 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
             music_engine = create_root_music(config)
 
         case "dacm":
-            if verbose: print("deep augmented classic music")
+            if verbose:
+                print("deep augmented classic music")
             app_dir = Path(os.getcwd())
             if "da_selector" in ctx.obj and ctx.obj["da_selector"]:
                 os.chdir(app_dir / "Music" / "da-cl-mu-da-selector")
@@ -63,14 +66,16 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
             config = music_engine.configs
 
         case "darm":
-            if verbose: print("deep augmented root music")
+            if verbose:
+                print("deep augmented root music")
             app_dir = Path(os.getcwd())
             os.chdir(app_dir / "Music" / "da-rm-mu")
             music_engine: Engine[RetDoa] = create_deep_root_music()
             config = music_engine.configs
 
         case _:
-            if verbose: print(f"estimator [red]{ctx.obj['estimator']}[/red] not supported")
+            if verbose:
+                print(f"estimator [red]{ctx.obj['estimator']}[/red] not supported")
             sys.exit("close application")
 
     config = alter_config_from_app_options(ctx, config)
@@ -82,12 +87,13 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
 def alter_config_from_app_options(ctx: typer.Context, config: Config) -> Config:
     verbose = False
     if "verbose" in ctx.obj:
-        verbose =  ctx.obj["verbose"]
-    
+        verbose = ctx.obj["verbose"]
+
     if "snr" in ctx.obj:
         snr = ctx.obj["snr"]
         config.base.snr_db = snr
-        if verbose: print(f"set snr [green]{snr}[/green]")
+        if verbose:
+            print(f"set snr [green]{snr}[/green]")
 
     return config
 
@@ -220,6 +226,39 @@ def estimation(
     print("estimated values: {}".format(np.rad2deg(doa_ret[0].thetas)))
 
 
+def run_simulation(
+    ctx: typer.Context,
+    deg_range,
+    deg_space,
+    experiments,
+) -> (RetDoa, np.ndarray):
+    """run one single simulation
+
+    RETURN
+    ------
+        doa_ret: RetDoa
+            the engine return object
+
+        doa: np.ndarray
+            ground truth
+    """
+    music_engine: Engine[RetDoa] = get_music_engine(ctx)
+    config: Config = music_engine.configs
+
+    r, doa = generate_data_set(
+        signal_generator=config.base.signal_provider,
+        array_geometry=config.base.array_geometry,
+        deg_range=deg_range,
+        min_spacing=deg_space,
+        samples=experiments,
+        max_signal_sources=config.base.d_sources,
+        snr_db=config.base.snr_db,
+    )
+
+    doa_ret: RetDoa = music_engine.estimate(r_sensed=r)
+    return doa_ret, doa
+
+
 @app.command()
 def simulation(
     ctx: typer.Context,
@@ -284,20 +323,14 @@ def simulation(
         deg_space,
     )
 
-    music_engine: Engine[RetDoa] = get_music_engine(ctx)
-    config: Config = music_engine.configs
-
-    r, doa = generate_data_set(
-        signal_generator=config.base.signal_provider,
-        array_geometry=config.base.array_geometry,
-        deg_range=deg_range,
-        min_spacing=deg_space,
-        samples=experiments,
-        max_signal_sources=config.base.d_sources,
-        snr_db=config.base.snr_db,
+    doa_ret: RetDoa
+    doa: np.ndarray
+    doa_ret, doa = run_simulation(
+        ctx,
+        deg_range,
+        deg_space,
+        experiments,
     )
-
-    doa_ret: RetDoa = music_engine.estimate(r_sensed=r)
     doa_result: Doa = doa_ret[0]
     loss: Loss = RMSPELoss()
     loss_array = loss.loss(doa, doa_result._thetas)
