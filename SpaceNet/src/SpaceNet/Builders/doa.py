@@ -101,7 +101,12 @@ def create_deep_classic_music(
                     ),
                 )
             engine = create_deep_music_engine(
-                configs, DoaEngine, DeepClassicDOA, model_names, defined_models, config_dir
+                configs,
+                DoaEngine,
+                DeepClassicDOA,
+                model_names,
+                defined_models,
+                config_dir,
             )
 
         case _:
@@ -124,7 +129,12 @@ def create_deep_classic_music(
                     ),
                 )
             engine = create_deep_music_engine(
-                configs, DoaEngine, DeepClassicDOA_WS, model_names, defined_models, config_dir
+                configs,
+                DoaEngine,
+                DeepClassicDOA_WS,
+                model_names,
+                defined_models,
+                config_dir,
             )
 
     _check_maybe_throw_engine_type(engine)

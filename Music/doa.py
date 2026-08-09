@@ -15,28 +15,29 @@ from Utils.exit import exit_application
 
 import numpy as np
 
-from typing import Annotated
+from typing import Annotated, Any
 import os
 import sys
 from pathlib import Path
+from threading import Thread, Lock
 
 import typer
 from rich import print
 
 
-def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
+def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
     verbose: bool = False
-    if "verbose" in ctx.obj:
-        verbose = ctx.obj["verbose"]
+    if "verbose" in ctx_obj:
+        verbose = ctx_obj["verbose"]
 
     music_engine: Engine[RetDoa] = None
     config: Config = Config()
 
-    match ctx.obj["estimator"]:
+    match ctx_obj["estimator"]:
         case "cm":
             if verbose:
                 print("classic music")
-            config = alter_config_from_app_options(ctx, config)
+            config = alter_config_from_app_options(ctx_obj, config)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
             config.base.signal.n_samples = 100
@@ -46,7 +47,7 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
         case "rm":
             if verbose:
                 print("root music")
-            config = alter_config_from_app_options(ctx, config)
+            config = alter_config_from_app_options(ctx_obj, config)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
             config.base.signal.n_samples = 100
@@ -57,40 +58,44 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
             if verbose:
                 print("deep augmented classic music")
             app_dir = Path(os.getcwd())
-            if "da_selector" in ctx.obj and ctx.obj["da_selector"]:
-                os.chdir(app_dir / "Music" / "da-cl-mu-da-selector")
-                music_engine = create_deep_classic_music(kind="sl")
+            if "da_selector" in ctx_obj and ctx_obj["da_selector"]:
+                music_engine = create_deep_classic_music(
+                    kind="sl",
+                    config_dir=Path(app_dir / "Music" / "da-cl-mu-da-selector"),
+                )
             else:
-                os.chdir(app_dir / "Music" / "da-cl-mu")
-                music_engine = create_deep_classic_music()
+                music_engine = create_deep_classic_music(
+                    config_dir=Path(app_dir / "Music" / "da-cl-mu")
+                )
             config = music_engine.configs
 
         case "darm":
             if verbose:
                 print("deep augmented root music")
             app_dir = Path(os.getcwd())
-            os.chdir(app_dir / "Music" / "da-rm-mu")
-            music_engine: Engine[RetDoa] = create_deep_root_music()
+            music_engine: Engine[RetDoa] = create_deep_root_music(
+                config_dir=Path(app_dir / "Music" / "da-rm-mu")
+            )
             config = music_engine.configs
 
         case _:
             if verbose:
-                print(f"estimator [red]{ctx.obj['estimator']}[/red] not supported")
+                print(f"estimator [red]{ctx_obj['estimator']}[/red] not supported")
             sys.exit("close application")
 
-    config = alter_config_from_app_options(ctx, config)
+    config = alter_config_from_app_options(ctx_obj, config)
     music_engine.configs = config
 
     return music_engine
 
 
-def alter_config_from_app_options(ctx: typer.Context, config: Config) -> Config:
+def alter_config_from_app_options(ctx_obj: dict[str, Any], config: Config) -> Config:
     verbose = False
-    if "verbose" in ctx.obj:
-        verbose = ctx.obj["verbose"]
+    if "verbose" in ctx_obj:
+        verbose = ctx_obj["verbose"]
 
-    if "snr" in ctx.obj:
-        snr = ctx.obj["snr"]
+    if "snr" in ctx_obj:
+        snr = ctx_obj["snr"]
         config.base.snr_db = snr
         if verbose:
             print(f"set snr [green]{snr}[/green]")
@@ -227,7 +232,7 @@ def estimation(
 
 
 def run_simulation(
-    ctx: typer.Context,
+    ctx_obj: dict[str, Any],
     deg_range,
     deg_space,
     experiments,
@@ -242,7 +247,7 @@ def run_simulation(
         doa: np.ndarray
             ground truth
     """
-    music_engine: Engine[RetDoa] = get_music_engine(ctx)
+    music_engine: Engine[RetDoa] = get_music_engine(ctx_obj)
     config: Config = music_engine.configs
 
     r, doa = generate_data_set(
@@ -257,6 +262,26 @@ def run_simulation(
 
     doa_ret: RetDoa = music_engine.estimate(r_sensed=r)
     return doa_ret, doa
+
+
+def check_user_options_simulation(
+    experiments: int,
+    deg_range: tuple[float, float],
+    deg_space: float,
+) -> None:
+    MAX_SAMPLES = 100_000
+    if experiments < 1 or experiments > MAX_SAMPLES:
+        exit_application(
+            f"Amount of experiments not supported [red]{experiments}[/red]"
+        )
+
+    if deg_range[0] > deg_range[1] or deg_range[0] < -90 or deg_range[1] > 90:
+        exit_application(
+            f"deg-range out of range min: [red]{deg_range[0]}[/red], max: [red]{deg_range[1]}[/red]"
+        )
+
+    if deg_space >= 180:
+        exit_application(f"deg-space too high [red]{deg_space}[/red]")
 
 
 @app.command()
@@ -298,26 +323,7 @@ def simulation(
     """
     ctx.obj["da_selector"] = da_selector
 
-    def check_user_options(
-        experiments: int,
-        deg_range: tuple[float, float],
-        deg_space: float,
-    ) -> None:
-        MAX_SAMPLES = 100_000
-        if experiments < 1 or experiments > MAX_SAMPLES:
-            exit_application(
-                f"Amount of experiments not supported [red]{experiments}[/red]"
-            )
-
-        if deg_range[0] > deg_range[1] or deg_range[0] < -90 or deg_range[1] > 90:
-            exit_application(
-                f"deg-range out of range min: [red]{deg_range[0]}[/red], max: [red]{deg_range[1]}[/red]"
-            )
-
-        if deg_space >= 180:
-            exit_application(f"deg-space too high [red]{deg_space}[/red]")
-
-    check_user_options(
+    check_user_options_simulation(
         experiments,
         deg_range,
         deg_space,
@@ -325,26 +331,129 @@ def simulation(
 
     doa_ret: RetDoa
     doa: np.ndarray
-    doa_ret, doa = run_simulation(
-        ctx,
+    doa_ret, doa_gt = run_simulation(
+        ctx.obj,
         deg_range,
         deg_space,
         experiments,
     )
     doa_result: Doa = doa_ret[0]
     loss: Loss = RMSPELoss()
-    loss_array = loss.loss(doa, doa_result._thetas)
+    loss_array = loss.loss(doa_gt, doa_result._thetas)
     loss_mean = np.mean(loss_array)
     print(f"loss mean: {loss_mean}")
 
 
+def check_user_options_benchmark(
+    metric: str,
+):
+    pass
+
+
 @app.command()
-def benchmark():
+def benchmark(
+    ctx: typer.Context,
+    metric: Annotated[
+        str,
+        typer.Option(
+            "--metric",
+            "-m",
+            help="A metric to compare the different Monte-Carlo experiments.",
+        ),
+    ] = "snr",
+    da_selector: Annotated[
+        bool,
+        typer.Option(
+            help="Will be parsed just in DA classical MUSIC estimator.  Either using deep augmented noise-signal selector or classical formulation.",
+        ),
+    ] = False,
+    experiments: Annotated[
+        int,
+        typer.Option(
+            "--experiments",
+            "-e",
+            help="The number of experiments that is going to drive the experiment.",
+        ),
+    ] = 100,
+    deg_range: Annotated[
+        tuple[float, float],
+        typer.Option(
+            "--range",
+            "-r",
+            help="Minimum and maximum angle of arrival in degrees.",
+        ),
+    ] = (-70.0, 70.0),
+    deg_space: Annotated[
+        float,
+        typer.Option(
+            "--space",
+            "-s",
+            help="Minimum space between impinging signals in degrees.",
+        ),
+    ] = 5,  # 15 grad guy
+):
     """Runs multible simulations of different estimators.  Each
     simulation will be plotted.
 
     """
-    print("not implemented yet")
+    check_user_options_benchmark(
+        metric,
+    )
+    check_user_options_simulation(
+        experiments,
+        deg_range,
+        deg_space,
+    )
+
+    simulation_mutex: Lock = Lock()
+    simulation_results: dict[str, tuple[RetDoa, np.ndarray]] = {}
+    simulation_threads: list[Thread] = []
+    for estimator in (
+        "cm",
+        "rm",
+        "dacm",
+        "darm",
+    ):
+        tmp_ctx_obj = ctx.obj.copy()
+        tmp_ctx_obj["estimator"] = estimator
+
+        def simulate(
+            ctx_obj,
+            experiments,
+            deg_range,
+            deg_space,
+        ):
+            doa_ret: RetDoa
+            doa_gt: np.ndarray
+            doa_ret, doa_gt = run_simulation(
+                ctx_obj,
+                deg_range,
+                deg_space,
+                experiments,
+            )
+            with simulation_mutex:
+                estimator = ctx_obj["estimator"]
+                simulation_results[estimator] = (doa_ret, doa_gt)
+
+        simulation_threads.append(
+            Thread(
+                target=simulate,
+                args=(tmp_ctx_obj, experiments, deg_range, deg_space),
+            )
+        )
+
+    for t in simulation_threads:
+        t.start()
+
+    for t in simulation_threads:
+        t.join()
+
+    loss: Loss = RMSPELoss()
+    for estimator, (doa_ret, doa_gt) in simulation_results.items():
+        doa_result: Doa = doa_ret[0]
+        loss_array = loss.loss(doa_gt, doa_result._thetas)
+        loss_mean = np.mean(loss_array)
+        print(f"{estimator} -- loss mean: {loss_mean}")
 
 
 @app.command()

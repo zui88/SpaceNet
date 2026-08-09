@@ -81,8 +81,9 @@ Runs one Monte-Carlo experiment.
 
 ** Benchmark
 
-Runs multible simulations of different estimators but within the same
-problem.
+Runs multible simulations of different estimators but within inside
+the same problem space.  The benchmark need a *metric* to compare the
+different Monte-Carlo experiments of the estimators.
 
 ** Plotting
 
