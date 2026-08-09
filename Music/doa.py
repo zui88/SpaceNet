@@ -100,6 +100,18 @@ def alter_config_from_app_options(ctx_obj: dict[str, Any], config: Config) -> Co
         if verbose:
             print(f"set snr [green]{snr}[/green]")
 
+    if "d_sources" in ctx_obj:
+        d_sources = ctx_obj["d_sources"]
+        config.base.d_sources = d_sources
+        if verbose:
+            print(f"set d-sources [green]{d_sources}[/green]")
+
+    if "inference" in ctx_obj:
+        inference = ctx_obj["inference"]
+        config.base.inference_mode = inference
+        if verbose:
+            print(f"set inference_mode [green]{inference}[/green]")
+
     return config
 
 
@@ -236,6 +248,7 @@ def run_simulation(
     deg_range,
     deg_space,
     experiments,
+    music_engine: Engine[RetDoa] | None = None
 ) -> (RetDoa, np.ndarray):
     """run one single simulation
 
@@ -247,7 +260,9 @@ def run_simulation(
         doa: np.ndarray
             ground truth
     """
-    music_engine: Engine[RetDoa] = get_music_engine(ctx_obj)
+    if music_engine is None:
+        music_engine = get_music_engine(ctx_obj)
+
     config: Config = music_engine.configs
 
     r, doa = generate_data_set(
@@ -405,9 +420,19 @@ def benchmark(
         deg_space,
     )
 
+    Estimator = str
+    GridPoint = float
+    DoaGT = np.ndarray
+    simulation_results: dict[Estimator, list[tuple[GridPoint, tuple[RetDoa, DoaGT]]]] = {}
     simulation_mutex: Lock = Lock()
-    simulation_results: dict[str, tuple[RetDoa, np.ndarray]] = {}
     simulation_threads: list[Thread] = []
+
+    ctx.obj["grid_space"] = 5
+    ctx.obj["grid_range"] = (-35, 60)
+    ctx.obj["metric"] = "snr"
+    ctx.obj["d_sources"] = 4
+    ctx.obj["inference"] = False
+
     for estimator in (
         "cm",
         "rm",
@@ -423,17 +448,30 @@ def benchmark(
             deg_range,
             deg_space,
         ):
+            start, stop = ctx_obj["grid_range"]
+            step = ctx_obj["grid_space"]
+            grid = np.arange(start, stop + 1, step)
+
             doa_ret: RetDoa
             doa_gt: np.ndarray
-            doa_ret, doa_gt = run_simulation(
-                ctx_obj,
-                deg_range,
-                deg_space,
-                experiments,
-            )
+
+            metric_data: list[tuple[GridPoint, tuple[RetDoa, DoaGT]]] = []
+            music_engine: Engine[RetDoa] = get_music_engine(ctx_obj)
+            for x in grid:
+                ctx_obj["snr"] = int(x)
+                if ctx_obj["verbose"]: print(f"metrix: {x}")
+                doa_ret, doa_gt = run_simulation(
+                    ctx_obj,
+                    deg_range,
+                    deg_space,
+                    experiments,
+                    music_engine,
+                )
+                metric_data.append((x, (doa_ret, doa_gt)))
+
             with simulation_mutex:
                 estimator = ctx_obj["estimator"]
-                simulation_results[estimator] = (doa_ret, doa_gt)
+                simulation_results[estimator] = metric_data
 
         simulation_threads.append(
             Thread(
@@ -449,11 +487,13 @@ def benchmark(
         t.join()
 
     loss: Loss = RMSPELoss()
-    for estimator, (doa_ret, doa_gt) in simulation_results.items():
-        doa_result: Doa = doa_ret[0]
-        loss_array = loss.loss(doa_gt, doa_result._thetas)
-        loss_mean = np.mean(loss_array)
-        print(f"{estimator} -- loss mean: {loss_mean}")
+    for estimator, metric_data in simulation_results.items():
+        print(f"{estimator}")
+        for x, (doa_ret, doa_gt) in metric_data:
+            doa_result: Doa = doa_ret[0]
+            loss_array = loss.loss(doa_gt, doa_result._thetas)
+            loss_mean = np.mean(loss_array)
+            print(f"\tgrid: {x} -- loss mean: {loss_mean}")
 
 
 @app.command()
