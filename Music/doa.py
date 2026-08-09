@@ -34,7 +34,7 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
 
     match ctx.obj["estimator"]:
         case "cm":
-            print("classic music")
+            if verbose: print("classic music")
             config = alter_config_from_app_options(ctx, config)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
@@ -43,7 +43,7 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
             music_engine = create_classic_music(config)
 
         case "rm":
-            print("root music")
+            if verbose: print("root music")
             config = alter_config_from_app_options(ctx, config)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
@@ -52,7 +52,7 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
             music_engine = create_root_music(config)
 
         case "dacm":
-            print("deep augmented classic music")
+            if verbose: print("deep augmented classic music")
             app_dir = Path(os.getcwd())
             if "da_selector" in ctx.obj and ctx.obj["da_selector"]:
                 os.chdir(app_dir / "Music" / "da-cl-mu-da-selector")
@@ -63,14 +63,14 @@ def get_music_engine(ctx: typer.Context) -> Engine[RetDoa]:
             config = music_engine.configs
 
         case "darm":
-            print("deep augmented root music")
+            if verbose: print("deep augmented root music")
             app_dir = Path(os.getcwd())
             os.chdir(app_dir / "Music" / "da-rm-mu")
             music_engine: Engine[RetDoa] = create_deep_root_music()
             config = music_engine.configs
 
         case _:
-            print(f"estimator [red]{ctx.obj['estimator']}[/red] not supported")
+            if verbose: print(f"estimator [red]{ctx.obj['estimator']}[/red] not supported")
             sys.exit("close application")
 
     config = alter_config_from_app_options(ctx, config)
@@ -94,6 +94,12 @@ app = typer.Typer(no_args_is_help=True)
 @app.callback()
 def doa(
     ctx: typer.Context,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            help="Display verbosely",
+        ),
+    ] = False,
     estimator: Annotated[
         str,
         typer.Option(
@@ -112,7 +118,7 @@ def doa(
         int | None,
         typer.Option(
             "--d-signals",
-            help="number of impinging signals",
+            help="Number of impinging signals",
         ),
     ] = None,
 ):
