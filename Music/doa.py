@@ -132,10 +132,24 @@ def doa(
             help="Display verbosely",
         ),
     ] = False,
+):
+    """
+    Using the DoA estimators.
+    """
+    ctx.ensure_object(dict)
+
+    ctx.obj["verbose"] = verbose
+
+
+@app.command(context_settings={"allow_interspersed_args": False})
+def estimation(
+    ctx: typer.Context,
+    thetas: list[float],
     estimator: Annotated[
         str,
         typer.Option(
             "--estimator",
+            "-e",
             help="cm :: classic-music, rm :: root-music, dacm :: da-classic-music, darm :: da-root-music",
         ),
     ] = "cm",
@@ -145,34 +159,7 @@ def doa(
             "--snr",
             help="signal-to-noise-ratio",
         ),
-    ] = None,
-    d_signals: Annotated[
-        int | None,
-        typer.Option(
-            "--d-signals",
-            help="Number of impinging signals",
-        ),
-    ] = None,
-):
-    """
-    Using the DoA estimators.
-    """
-    ctx.ensure_object(dict)
-
-    ctx.obj["estimator"] = estimator
-    ctx.obj["verbose"] = verbose
-
-    if snr is not None:
-        ctx.obj["snr"] = snr
-
-    if d_signals is not None:
-        ctx.obj["d_signals"] = d_signals
-
-
-@app.command(context_settings={"allow_interspersed_args": False})
-def estimation(
-    ctx: typer.Context,
-    thetas: list[float],
+    ] = 35,
     da_selector: Annotated[
         bool,
         typer.Option(
@@ -184,60 +171,15 @@ def estimation(
     """
     Takes one list of ground truth that the engine will try to estimate.
     """
+
+    ctx.obj["estimator"] = estimator
+    ctx.obj["snr"] = snr
+
     print("thetas given: {}".format(thetas))
     ground_truth = np.deg2rad(thetas)
 
-    match ctx.obj["estimator"]:
-        case "cm":
-            print("classic music")
-            config = Config()
-            config = alter_config_from_options(ctx, config)
-            config.base.signal.kind = SignalKind.RANDOM_SIGNAL
-            config.base.array.kind = ArrayKind.ULA_ARRAY
-            config.base.signal.n_samples = 100
-            music_engine: Engine[RetDoa] = create_classic_music(config)
-
-        case "rm":
-            print("root music")
-            config = Config()
-            config = alter_config_from_options(ctx, config)
-            config.base.signal.kind = SignalKind.RANDOM_SIGNAL
-            config.base.array.kind = ArrayKind.ULA_ARRAY
-            config.base.signal.n_samples = 100
-            music_engine: Engine[RetDoa] = create_root_music(config)
-
-        case "dacm":
-            print("deep augmented classic music")
-            app_dir = Path(os.getcwd())
-            if da_selector:
-                os.chdir(app_dir / "Music" / "da-cl-mu-da-selector")
-                music_engine: Engine[RetDoa] = create_deep_classic_music(kind="sl")
-            else:
-                os.chdir(app_dir / "Music" / "da-cl-mu")
-                music_engine: Engine[RetDoa] = create_deep_classic_music()
-            config: Config = music_engine.configs
-
-            if len(ground_truth) != config.base.d_sources:
-                exit_application(
-                    f"[red]thetas len must be {config.base.d_sources}[/red]"
-                )
-
-            config = alter_config_from_options(ctx, config)
-
-        case "darm":
-            print("deep augmented root music")
-            app_dir = Path(os.getcwd())
-            os.chdir(app_dir / "Music" / "da-rm-mu")
-            music_engine: Engine[RetDoa] = create_deep_root_music()
-            config: Config = music_engine.configs
-            if len(ground_truth) != config.base.d_sources:
-                exit_application(
-                    f"[red]thetas len must be {config.base.d_sources}[/red]"
-                )
-
-        case _:
-            print(f"estimator [red]{ctx.obj['estimator']}[/red] not supported")
-            sys.exit("close application")
+    music_engine: Engine[RetDoa] = get_music_engine(ctx.obj)
+    config: Config = music_engine.configs
 
     signal_synthesizer = DoaSynthesizerWrapper(config)
     r = signal_synthesizer.generate(tuple(ground_truth))
@@ -305,6 +247,35 @@ def check_user_options_simulation(
 @app.command()
 def simulation(
     ctx: typer.Context,
+    estimator: Annotated[
+        str,
+        typer.Option(
+            "--estimator",
+            "-e",
+            help="cm :: classic-music, rm :: root-music, dacm :: da-classic-music, darm :: da-root-music",
+        ),
+    ] = "cm",
+    snr: Annotated[
+        float | None,
+        typer.Option(
+            "--snr",
+            help="signal-to-noise-ratio",
+        ),
+    ] = 35,
+    d_signals: Annotated[
+        int | None,
+        typer.Option(
+            "--signals",
+            "-d",
+            help="Number of impinging signals",
+        ),
+    ] = None,
+    inference: Annotated[
+        bool,
+        typer.Option(
+            help=".",
+        ),
+    ] = True,
     da_selector: Annotated[
         bool,
         typer.Option(
@@ -340,6 +311,9 @@ def simulation(
     Run one Monte-Carlo experiment.
     """
     ctx.obj["da_selector"] = da_selector
+    ctx.obj["estimator"] = estimator
+    ctx.obj["d_signals"] = d_signals
+    ctx.obj["snr"] = snr
 
     check_user_options_simulation(
         experiments,
@@ -489,13 +463,13 @@ def benchmark(
 
             music_engine: Engine[RetDoa] = get_music_engine(ctx_obj)
             configs = music_engine.configs
-            
+
             doa_ret: RetDoa
             doa_gt: np.ndarray
             metric_data: list[tuple[GridPoint, tuple[RetDoa, DoaGT]]] = []
             for x in grid:
                 configs.base.snr_db = float(x)
-                
+
                 doa_ret, doa_gt = run_simulation(
                     ctx_obj,
                     deg_range,
@@ -526,20 +500,20 @@ def benchmark(
     for estimator, metric_data in simulation_results.items():
         xs = []
         losses = []
-        
+
         if ctx.obj["verbose"]:
             print(f"{estimator}")
         for x, (doa_ret, doa_gt) in metric_data:
             doa_result: Doa = doa_ret[0]
             loss_array = loss.loss(doa_gt, doa_result._thetas)
             loss_mean = np.mean(loss_array)
-            
+
             xs.append(x)
             losses.append(loss_mean)
-            
+
             if ctx.obj["verbose"]:
                 print(f"\tgrid: {x} -- loss mean: {loss_mean}")
-        
+
         if plot:
             ax.plot(xs, losses, marker="o", label=estimator)
 
@@ -550,6 +524,7 @@ def benchmark(
         ax.grid(True, which="both")
         ax.legend()
         plt.show()
+
 
 @app.command()
 def plot():
