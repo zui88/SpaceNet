@@ -13,6 +13,7 @@ from SpaceNet.Utils.DeepAugmented.LossFunctions.rmspe_loss import RMSPELoss
 
 from Utils.exit import exit_application
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from typing import Annotated, Any
@@ -37,7 +38,7 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
         case "cm":
             if verbose:
                 print("classic music")
-            config = alter_config_from_app_options(ctx_obj, config)
+            config = alter_config_from_app_options(ctx_obj, config, False)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
             config.base.signal.n_samples = 100
@@ -47,7 +48,7 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
         case "rm":
             if verbose:
                 print("root music")
-            config = alter_config_from_app_options(ctx_obj, config)
+            config = alter_config_from_app_options(ctx_obj, config, False)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
             config.base.signal.n_samples = 100
@@ -89,10 +90,12 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
     return music_engine
 
 
-def alter_config_from_app_options(ctx_obj: dict[str, Any], config: Config) -> Config:
+def alter_config_from_app_options(
+    ctx_obj: dict[str, Any], config: Config, printable: bool = True
+) -> Config:
     verbose = False
     if "verbose" in ctx_obj:
-        verbose = ctx_obj["verbose"]
+        verbose = ctx_obj["verbose"] and printable
 
     if "snr" in ctx_obj:
         snr = ctx_obj["snr"]
@@ -248,7 +251,7 @@ def run_simulation(
     deg_range,
     deg_space,
     experiments,
-    music_engine: Engine[RetDoa] | None = None
+    music_engine: Engine[RetDoa] | None = None,
 ) -> (RetDoa, np.ndarray):
     """run one single simulation
 
@@ -312,7 +315,7 @@ def simulation(
         int,
         typer.Option(
             "--experiments",
-            "-e",
+            "-n",
             help="The number of experiments that is going to drive the experiment.",
         ),
     ] = 100,
@@ -361,6 +364,8 @@ def simulation(
 
 def check_user_options_benchmark(
     metric: str,
+    *args,
+    **argsv,
 ):
     pass
 
@@ -368,14 +373,49 @@ def check_user_options_benchmark(
 @app.command()
 def benchmark(
     ctx: typer.Context,
+    grid_space: Annotated[
+        float,
+        typer.Option(
+            "--grid-space",
+            "-g",
+            help="Spacing between adjacent points in the Monte-Carlo evaluation grid.",
+        ),
+    ] = 5,
+    grid_range: Annotated[
+        tuple[float, float],
+        typer.Option(
+            "--grid-range",
+            "-r",
+            help=".",
+        ),
+    ] = (-5, 35),
+    estimators: Annotated[
+        list[str],
+        typer.Option(
+            "--estimators",
+            "-e",
+            help="Estimators to evaluate: cm, rm, dacm, darm.",
+        ),
+    ] = [
+        "cm",
+        "rm",
+        "dacm",
+        "darm",
+    ],
     metric: Annotated[
         str,
         typer.Option(
-            "--metric",
-            "-m",
-            help="A metric to compare the different Monte-Carlo experiments.",
+            help="signal-to-noise-ration: snr",
         ),
     ] = "snr",
+    plot: Annotated[
+        bool,
+        typer.Option(
+            "--plot",
+            "-p",
+            help="plot the result with pyplot",
+        ),
+    ] = False,
     da_selector: Annotated[
         bool,
         typer.Option(
@@ -386,7 +426,7 @@ def benchmark(
         int,
         typer.Option(
             "--experiments",
-            "-e",
+            "-n",
             help="The number of experiments that is going to drive the experiment.",
         ),
     ] = 100,
@@ -394,7 +434,6 @@ def benchmark(
         tuple[float, float],
         typer.Option(
             "--range",
-            "-r",
             help="Minimum and maximum angle of arrival in degrees.",
         ),
     ] = (-70.0, 70.0),
@@ -402,7 +441,6 @@ def benchmark(
         float,
         typer.Option(
             "--space",
-            "-s",
             help="Minimum space between impinging signals in degrees.",
         ),
     ] = 5,  # 15 grad guy
@@ -413,6 +451,8 @@ def benchmark(
     """
     check_user_options_benchmark(
         metric,
+        grid_space,
+        estimators,
     )
     check_user_options_simulation(
         experiments,
@@ -423,22 +463,19 @@ def benchmark(
     Estimator = str
     GridPoint = float
     DoaGT = np.ndarray
-    simulation_results: dict[Estimator, list[tuple[GridPoint, tuple[RetDoa, DoaGT]]]] = {}
+    simulation_results: dict[
+        Estimator, list[tuple[GridPoint, tuple[RetDoa, DoaGT]]]
+    ] = {}
     simulation_mutex: Lock = Lock()
     simulation_threads: list[Thread] = []
 
-    ctx.obj["grid_space"] = 5
-    ctx.obj["grid_range"] = (-35, 60)
-    ctx.obj["metric"] = "snr"
+    ctx.obj["grid_space"] = grid_space
+    ctx.obj["grid_range"] = grid_range
+    ctx.obj["metric"] = metric
     ctx.obj["d_sources"] = 4
     ctx.obj["inference"] = False
 
-    for estimator in (
-        "cm",
-        "rm",
-        "dacm",
-        "darm",
-    ):
+    for estimator in estimators:
         tmp_ctx_obj = ctx.obj.copy()
         tmp_ctx_obj["estimator"] = estimator
 
@@ -452,14 +489,15 @@ def benchmark(
             step = ctx_obj["grid_space"]
             grid = np.arange(start, stop + 1, step)
 
+            music_engine: Engine[RetDoa] = get_music_engine(ctx_obj)
+            configs = music_engine.configs
+            
             doa_ret: RetDoa
             doa_gt: np.ndarray
-
             metric_data: list[tuple[GridPoint, tuple[RetDoa, DoaGT]]] = []
-            music_engine: Engine[RetDoa] = get_music_engine(ctx_obj)
             for x in grid:
-                ctx_obj["snr"] = int(x)
-                if ctx_obj["verbose"]: print(f"metrix: {x}")
+                configs.base.snr_db = float(x)
+                
                 doa_ret, doa_gt = run_simulation(
                     ctx_obj,
                     deg_range,
@@ -486,15 +524,35 @@ def benchmark(
     for t in simulation_threads:
         t.join()
 
+    fig, ax = plt.subplots()
     loss: Loss = RMSPELoss()
     for estimator, metric_data in simulation_results.items():
-        print(f"{estimator}")
+        xs = []
+        losses = []
+        
+        if ctx.obj["verbose"]:
+            print(f"{estimator}")
         for x, (doa_ret, doa_gt) in metric_data:
             doa_result: Doa = doa_ret[0]
             loss_array = loss.loss(doa_gt, doa_result._thetas)
             loss_mean = np.mean(loss_array)
-            print(f"\tgrid: {x} -- loss mean: {loss_mean}")
+            
+            xs.append(x)
+            losses.append(loss_mean)
+            
+            if ctx.obj["verbose"]:
+                print(f"\tgrid: {x} -- loss mean: {loss_mean}")
+        
+        if plot:
+            ax.plot(xs, losses, marker="o", label=estimator)
 
+    if plot:
+        ax.set_yscale("log")
+        ax.set_xlabel("Grid")
+        ax.set_ylabel("RMSPE")
+        ax.grid(True, which="both")
+        ax.legend()
+        plt.show()
 
 @app.command()
 def plot():
