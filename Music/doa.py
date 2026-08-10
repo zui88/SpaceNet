@@ -38,7 +38,7 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
         case "cm":
             if verbose:
                 print("classic music")
-            config = alter_config_from_app_options(ctx_obj, config, False)
+            config = alter_config_from_options(ctx_obj, config, False)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
             config.base.signal.n_samples = 100
@@ -48,7 +48,7 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
         case "rm":
             if verbose:
                 print("root music")
-            config = alter_config_from_app_options(ctx_obj, config, False)
+            config = alter_config_from_options(ctx_obj, config, False)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
             config.base.signal.n_samples = 100
@@ -84,13 +84,13 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
                 print(f"estimator [red]{ctx_obj['estimator']}[/red] not supported")
             sys.exit("close application")
 
-    config = alter_config_from_app_options(ctx_obj, config)
+    config = alter_config_from_options(ctx_obj, config)
     music_engine.configs = config
 
     return music_engine
 
 
-def alter_config_from_app_options(
+def alter_config_from_options(
     ctx_obj: dict[str, Any], config: Config, printable: bool = True
 ) -> Config:
     verbose = False
@@ -191,7 +191,7 @@ def estimation(
         case "cm":
             print("classic music")
             config = Config()
-            config = alter_config_from_app_options(ctx, config)
+            config = alter_config_from_options(ctx, config)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
             config.base.signal.n_samples = 100
@@ -200,7 +200,7 @@ def estimation(
         case "rm":
             print("root music")
             config = Config()
-            config = alter_config_from_app_options(ctx, config)
+            config = alter_config_from_options(ctx, config)
             config.base.signal.kind = SignalKind.RANDOM_SIGNAL
             config.base.array.kind = ArrayKind.ULA_ARRAY
             config.base.signal.n_samples = 100
@@ -222,7 +222,7 @@ def estimation(
                     f"[red]thetas len must be {config.base.d_sources}[/red]"
                 )
 
-            config = alter_config_from_app_options(ctx, config)
+            config = alter_config_from_options(ctx, config)
 
         case "darm":
             print("deep augmented root music")
@@ -469,9 +469,6 @@ def benchmark(
     simulation_mutex: Lock = Lock()
     simulation_threads: list[Thread] = []
 
-    ctx.obj["grid_space"] = grid_space
-    ctx.obj["grid_range"] = grid_range
-    ctx.obj["metric"] = metric
     ctx.obj["d_sources"] = 4
     ctx.obj["inference"] = False
 
@@ -481,12 +478,13 @@ def benchmark(
 
         def simulate(
             ctx_obj,
+            estimator,
             experiments,
             deg_range,
             deg_space,
         ):
-            start, stop = ctx_obj["grid_range"]
-            step = ctx_obj["grid_space"]
+            start, stop = grid_range
+            step = grid_space
             grid = np.arange(start, stop + 1, step)
 
             music_engine: Engine[RetDoa] = get_music_engine(ctx_obj)
@@ -508,13 +506,12 @@ def benchmark(
                 metric_data.append((x, (doa_ret, doa_gt)))
 
             with simulation_mutex:
-                estimator = ctx_obj["estimator"]
                 simulation_results[estimator] = metric_data
 
         simulation_threads.append(
             Thread(
                 target=simulate,
-                args=(tmp_ctx_obj, experiments, deg_range, deg_space),
+                args=(tmp_ctx_obj, estimator, experiments, deg_range, deg_space),
             )
         )
 
