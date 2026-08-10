@@ -70,6 +70,16 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
                 )
             config = music_engine.configs
 
+        case "dacm-ns":
+            if verbose:
+                print("deep augmented classic music with deep augmented noise selector")
+            app_dir = Path(os.getcwd())
+            music_engine = create_deep_classic_music(
+                kind="sl",
+                config_dir=Path(app_dir / "Music" / "da-cl-mu-da-selector"),
+            )
+            config = music_engine.configs
+
         case "darm":
             if verbose:
                 print("deep augmented root music")
@@ -78,6 +88,31 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDoa]:
                 config_dir=Path(app_dir / "Music" / "da-rm-mu")
             )
             config = music_engine.configs
+
+        case "rnd":
+            if verbose:
+                print("random device")
+            config = alter_config_from_options(ctx_obj, config, False)
+            config.base.signal.kind = SignalKind.RANDOM_SIGNAL
+            config.base.array.kind = ArrayKind.ULA_ARRAY
+            config.base.signal.n_samples = 100
+            config.base.d_sources = 4  # MAGIC NUMBER :(
+
+            class RandomEngine:
+                def estimate(self, r_sensed):
+                    batch_size, _, _ = r_sensed.shape
+                    rng = np.random.default_rng()
+
+                    class Ret:
+                        pass
+
+                    ret = Ret()
+                    ret._thetas = rng.uniform(
+                        -np.pi / 2, np.pi / 2, size=(batch_size, config.base.d_sources)
+                    )
+                    return (ret,)
+
+            music_engine = RandomEngine()
 
         case _:
             if verbose:
@@ -368,12 +403,13 @@ def benchmark(
         typer.Option(
             "--estimators",
             "-e",
-            help="Estimators to evaluate: cm, rm, dacm, darm.",
+            help="Estimators to evaluate: cm, rm, dacm, dacm-ns, darm.",
         ),
     ] = [
-        "cm",
+        "rnd",
         "rm",
         "dacm",
+        "dacm-ns",
         "darm",
     ],
     metric: Annotated[
