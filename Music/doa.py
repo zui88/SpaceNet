@@ -248,7 +248,7 @@ def run_simulation(
     correlation_coefficient = None
     if "correlation" in ctx_obj:
         correlation_coefficient = ctx_obj["correlation"]
-        
+
     r, doa = generate_data_set(
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,
@@ -257,7 +257,7 @@ def run_simulation(
         samples=experiments,
         max_signal_sources=config.base.d_sources,
         snr_db=config.base.snr_db,
-        correlation_coefficient = correlation_coefficient,
+        correlation_coefficient=correlation_coefficient,
     )
 
     doa_ret: RetDoa = music_engine.estimate(r_sensed=r)

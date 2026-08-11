@@ -40,25 +40,26 @@ def _generate_checked_matrix(
                 doa_high,
                 size=(training_examples, max_signal_sources),
             )
-            
+
             valid = np.zeros(training_examples, dtype=bool)
-            
+
             while not np.all(valid):
                 idx = ~valid
-            
+
                 # resample only invalid rows
                 doa_deg_set[idx] = rng.uniform(
                     doa_low,
                     doa_high,
                     size=(idx.sum(), max_signal_sources),
                 )
-            
+
                 # check spacing constraint
                 valid[idx] = np.all(
-                    np.diff(np.sort(doa_deg_set[idx], axis=1), axis=1) >= min_doa_spacing,
+                    np.diff(np.sort(doa_deg_set[idx], axis=1), axis=1)
+                    >= min_doa_spacing,
                     axis=1,
                 )
-                
+
     else:
         doa_deg_set = np.zeros((training_examples, max_signal_sources))
 
@@ -146,7 +147,10 @@ def generate_data_set(
 
     correlation_matrix = None
     if correlation_coefficient is not None:
-        correlation_matrix = np.array([[1.0, correlation_coefficient], [correlation_coefficient, 1.0]])
+        correlation_matrix = np.array(
+            [[1.0, correlation_coefficient], [correlation_coefficient, 1.0]]
+        )
+
     def generate_signals(doas):
         if type(snr_db) is tuple:
             return DOASignalSynthesizer(
