@@ -29,29 +29,38 @@ def _generate_checked_matrix(
 
     """
 
-    doa_deg_set = rng.uniform(
-        doa_low,
-        doa_high,
-        size=(training_examples, max_signal_sources),
-    )
-
-    valid = np.zeros(training_examples, dtype=bool)
-
-    while not np.all(valid):
-        idx = ~valid
-
-        # resample only invalid rows
-        doa_deg_set[idx] = rng.uniform(
-            doa_low,
-            doa_high,
-            size=(idx.sum(), max_signal_sources),
-        )
-
-        # check spacing constraint
-        valid[idx] = np.all(
-            np.diff(np.sort(doa_deg_set[idx], axis=1), axis=1) >= min_doa_spacing,
-            axis=1,
-        )
+    if doa_low != doa_high:
+        margin = min_doa_spacing - (doa_high - doa_low)
+        eps = 0.05
+        if margin < eps and max_signal_sources == 2:
+            doa_deg_set = np.full((training_examples, 2), [doa_low, doa_high])
+        else:
+            doa_deg_set = rng.uniform(
+                doa_low,
+                doa_high,
+                size=(training_examples, max_signal_sources),
+            )
+            
+            valid = np.zeros(training_examples, dtype=bool)
+            
+            while not np.all(valid):
+                idx = ~valid
+            
+                # resample only invalid rows
+                doa_deg_set[idx] = rng.uniform(
+                    doa_low,
+                    doa_high,
+                    size=(idx.sum(), max_signal_sources),
+                )
+            
+                # check spacing constraint
+                valid[idx] = np.all(
+                    np.diff(np.sort(doa_deg_set[idx], axis=1), axis=1) >= min_doa_spacing,
+                    axis=1,
+                )
+                
+    else:
+        doa_deg_set = np.zeros((training_examples, max_signal_sources))
 
     return doa_deg_set[:, np.newaxis, :]
 
