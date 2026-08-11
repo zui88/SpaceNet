@@ -506,12 +506,24 @@ def benchmark(
             doa_ret: RetDoa
             doa_gt: np.ndarray
             metric_data: list[tuple[GridPoint, tuple[RetDoa, DoaGT]]] = []
+            verbose = ctx_obj["verbose"]
             for x in grid:
                 match metric:
                     case "snr":
+                        if verbose:
+                            print("signal-to-noise-ration")
                         configs.base.snr_db = float(x)
                     case "cor":
+                        if verbose:
+                            print("correlation coefficient")
                         ctx_obj["correlation"] = x
+                    case "sd":
+                        if verbose:
+                            print("source distance")
+                        min = -np.rad2deg(x) / 2
+                        max = np.rad2deg(x) / 2
+                        deg_range = (min, max)
+                        deg_space = np.rad2deg(x)
                     case _:
                         configs.base.snr_db = float(x)
 
@@ -571,6 +583,8 @@ def benchmark(
                 ax.set_xlabel("SNR [dB]")
             case "cor":
                 ax.set_xlabel(r"$\sigma^2$")
+            case "sd":
+                ax.set_xlabel(r"source distance $(\Delta\theta)$[rad]")
             case _:
                 ax.set_xlabel("SNR [dB]")
         ax.grid(True, which="both")

@@ -61,6 +61,17 @@ Every results of an experiment is captured by its /experiment-id/.
 For post processing to refer to a distinct experiment the
 experiment-id is being used.
 
+* Problem
+
+** DoA
+
+#+begin_src sh
+music doa estimation 45 -36
+#+end_src
+
+** Delay Doppler
+
+* Estimator
 * Experiment
 
 Experiments are subcommands and, therefore, have its own set of
@@ -84,6 +95,24 @@ Runs one Monte-Carlo experiment.
 Runs multible simulations of different estimators but within inside
 the same problem space.  The benchmark need a *metric* to compare the
 different Monte-Carlo experiments of the estimators.
+
+*** Source Distance
+
+#+begin_src sh
+uv run Music/music.py doa benchmark -r 0 0.5 -s 0.05 -p -msd
+#+end_src
+
+*** SNR
+
+#+begin_src sh
+uv run Music/music.py doa benchmark -r -20 30 -s 5 -p -msnr
+#+end_src
+
+*** Correlation
+
+#+begin_src sh
+uv run Music/music.py doa benchmark -r 0 0.99 -s 0.1 -p -mcor
+#+end_src
 
 ** Plotting
 
@@ -117,25 +146,5 @@ music plot <kind> <simulation-file>
   + rmse
   + runtime
 
-
-
-
-* Estimator
-
-Argument
-
-* Problem
-
-Argument
-
-** DoA
-
-#+begin_src sh
-music doa estimation 45 -36
-#+end_src
-
-** Delay Doppler
-
 * Options
-
 * Installation
