@@ -230,7 +230,7 @@ def run_simulation(
     experiments,
     music_engine: Engine[RetDoa] | None = None,
 ) -> (RetDoa, np.ndarray):
-    """run one single simulation
+    """run one single Monte-Carlo simulation
 
     RETURN
     ------
@@ -245,6 +245,10 @@ def run_simulation(
 
     config: Config = music_engine.configs
 
+    correlation_coefficient = None
+    if "correlation" in ctx_obj:
+        correlation_coefficient = ctx_obj["correlation"]
+        
     r, doa = generate_data_set(
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,
@@ -253,6 +257,7 @@ def run_simulation(
         samples=experiments,
         max_signal_sources=config.base.d_sources,
         snr_db=config.base.snr_db,
+        correlation_coefficient = correlation_coefficient,
     )
 
     doa_ret: RetDoa = music_engine.estimate(r_sensed=r)
@@ -382,22 +387,30 @@ def check_user_options_benchmark(
 @app.command()
 def benchmark(
     ctx: typer.Context,
-    grid_space: Annotated[
-        float,
+    metric: Annotated[
+        str,
         typer.Option(
-            "--grid-space",
-            "-g",
-            help="Spacing between adjacent points in the Monte-Carlo evaluation grid.",
+            "--metric",
+            "-m",
+            help="signal-to-noise-ration: snr, correlation coefficient: cor, source distance: sd",
         ),
-    ] = 5,
+    ] = "snr",
     grid_range: Annotated[
         tuple[float, float],
         typer.Option(
             "--grid-range",
             "-r",
-            help=".",
+            help="The minimum and maximum value that the range a scanned through.",
         ),
     ] = (-5, 35),
+    grid_space: Annotated[
+        float,
+        typer.Option(
+            "--grid-space",
+            "-s",
+            help="Spacing between adjacent points in the Monte-Carlo evaluation grid.",
+        ),
+    ] = 5,
     estimators: Annotated[
         list[str],
         typer.Option(
@@ -412,24 +425,12 @@ def benchmark(
         "dacm-ns",
         "darm",
     ],
-    metric: Annotated[
-        str,
-        typer.Option(
-            help="signal-to-noise-ration: snr",
-        ),
-    ] = "snr",
     plot: Annotated[
         bool,
         typer.Option(
             "--plot",
             "-p",
             help="plot the result with pyplot",
-        ),
-    ] = False,
-    da_selector: Annotated[
-        bool,
-        typer.Option(
-            help="Will be parsed just in DA classical MUSIC estimator.  Either using deep augmented noise-signal selector or classical formulation.",
         ),
     ] = False,
     experiments: Annotated[
@@ -479,7 +480,7 @@ def benchmark(
     simulation_mutex: Lock = Lock()
     simulation_threads: list[Thread] = []
 
-    ctx.obj["d_sources"] = 4
+    ctx.obj["d_sources"] = 2
     ctx.obj["inference"] = False
 
     for estimator in estimators:
@@ -495,7 +496,9 @@ def benchmark(
         ):
             start, stop = grid_range
             step = grid_space
-            grid = np.arange(start, stop + 1, step)
+            grid = np.arange(start, stop, step)
+            if grid[-1] != stop:
+                grid = np.append(grid, stop)
 
             music_engine: Engine[RetDoa] = get_music_engine(ctx_obj)
             configs = music_engine.configs
@@ -504,7 +507,13 @@ def benchmark(
             doa_gt: np.ndarray
             metric_data: list[tuple[GridPoint, tuple[RetDoa, DoaGT]]] = []
             for x in grid:
-                configs.base.snr_db = float(x)
+                match metric:
+                    case "snr":
+                        configs.base.snr_db = float(x)
+                    case "cor":
+                        ctx_obj["correlation"] = x
+                    case _:
+                        configs.base.snr_db = float(x)
 
                 doa_ret, doa_gt = run_simulation(
                     ctx_obj,
@@ -556,8 +565,14 @@ def benchmark(
     if plot:
         ax.set_xscale("linear")
         ax.set_yscale("log")
-        ax.set_xlabel("SNR [dB]")
         ax.set_ylabel("RMSPE [rad]")
+        match metric:
+            case "snr":
+                ax.set_xlabel("SNR [dB]")
+            case "cor":
+                ax.set_xlabel(r"$\sigma^2$")
+            case _:
+                ax.set_xlabel("SNR [dB]")
         ax.grid(True, which="both")
         ax.legend()
         plt.show()
