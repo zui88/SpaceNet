@@ -554,9 +554,10 @@ def benchmark(
             ax.plot(xs, losses, marker="o", label=estimator)
 
     if plot:
+        ax.set_xscale("linear")
         ax.set_yscale("log")
-        ax.set_xlabel("Grid")
-        ax.set_ylabel("RMSPE")
+        ax.set_xlabel("SNR [dB]")
+        ax.set_ylabel("RMSPE [rad]")
         ax.grid(True, which="both")
         ax.legend()
         plt.show()
