@@ -8,6 +8,9 @@ class RMSPELoss(PermutatedLoss):
     Root Means Square Phase Error
     """
 
+    def __init__(self, d_source: int = 4, *args, **kwargs):
+        super().__init__(d_source, *args, **kwargs)
+
     def compute_error(self, ground_truth, predictions):
         true_doa = ground_truth
         pred_doa = predictions
