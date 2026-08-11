@@ -66,6 +66,7 @@ def generate_data_set(
     deg_range: tuple[float, float] = (-70.0, 70.0),
     min_spacing: float | int = 7.5,
     seed: int | None = 42,
+    correlation_coefficient: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """
 
@@ -82,6 +83,9 @@ def generate_data_set(
         the space between signal sources in one measurement
 
     seed
+
+    correlation_coefficient
+        Define how strong two impinging signals are correlated.
 
     Returns
     -------
@@ -131,14 +135,17 @@ def generate_data_set(
             snr_db=snr_db,
         )
 
+    correlation_matrix = None
+    if correlation_coefficient is not None:
+        correlation_matrix = np.array([[1.0, correlation_coefficient], [correlation_coefficient, 1.0]])
     def generate_signals(doas):
         if type(snr_db) is tuple:
             return DOASignalSynthesizer(
                 array_geometry=array_geometry,
                 signal_generator=signal_generator,
                 snr_db=rng.uniform(low=snr_low, high=snr_high),
-            ).generate(doas.flatten())
-        return synthesizer.generate(doas.flatten())
+            ).generate(doas.flatten(), correlation_matrix)
+        return synthesizer.generate(doas.flatten(), correlation_matrix)
 
     signal_set = np.array(list(map(generate_signals, doa_rad_set)))
 
