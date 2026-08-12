@@ -520,10 +520,10 @@ def benchmark(
                     case "sd":
                         if verbose:
                             print("source distance")
-                        min = -np.rad2deg(x) / 2
-                        max = np.rad2deg(x) / 2
+                        min = -x / 2
+                        max = x / 2
                         deg_range = (min, max)
-                        deg_space = np.rad2deg(x)
+                        deg_space = x
                     case _:
                         configs.base.snr_db = float(x)
 
@@ -584,7 +584,7 @@ def benchmark(
             case "cor":
                 ax.set_xlabel(r"$\sigma^2$")
             case "sd":
-                ax.set_xlabel(r"source distance $(\Delta\theta)$[rad]")
+                ax.set_xlabel(r"source distance $(\Delta\theta)$[grad]")
             case _:
                 ax.set_xlabel("SNR [dB]")
         ax.grid(True, which="both")
