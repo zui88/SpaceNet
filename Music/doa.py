@@ -167,6 +167,13 @@ def doa(
             help="Display verbosely",
         ),
     ] = False,
+    snr: Annotated[
+        float,
+        typer.Option(
+            "--snr",
+            help="signal-to-noise-ration",
+        ),
+    ] = 35,
 ):
     """
     Using the DoA estimators.
@@ -174,6 +181,7 @@ def doa(
     ctx.ensure_object(dict)
 
     ctx.obj["verbose"] = verbose
+    ctx.obj["snr"] = snr
 
 
 @app.command(context_settings={"allow_interspersed_args": False})
