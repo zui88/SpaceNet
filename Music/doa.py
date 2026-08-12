@@ -454,7 +454,7 @@ def benchmark(
             "--space",
             help="Minimum space between impinging signals in degrees.",
         ),
-    ] = 5,  # 15 grad guy
+    ] = 15,
 ):
     """Runs multible simulations of different estimators.  Each
     simulation will be plotted.
