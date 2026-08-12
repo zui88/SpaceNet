@@ -1,6 +1,6 @@
 import SpaceNet as sn
 
-import simple
+import delay_doppler
 import doa
 
 from typing import Annotated
@@ -15,13 +15,13 @@ app = typer.Typer(
 )
 
 
-app.add_typer(simple.app, name="simple")
 app.add_typer(doa.app, name="doa")
+app.add_typer(delay_doppler.app, name="dd")
 
 
 def version_cb(value: bool):
     if value:
-        typer.echo("music version: 0.0.1")
+        typer.echo("Music version: 0.4.3")
         typer.echo("SpaceNet version: {}".format(sn.__version__))
         raise typer.Exit()
 

@@ -157,7 +157,7 @@ app = typer.Typer(no_args_is_help=True)
 
 
 @app.callback()
-def doa(
+def dd(
     ctx: typer.Context,
     verbose: Annotated[
         bool,
@@ -176,7 +176,7 @@ def doa(
     ] = 35,
 ):
     """
-    Using the DoA estimators.
+    Using the delay doppler estimators.
     """
     ctx.ensure_object(dict)
 
