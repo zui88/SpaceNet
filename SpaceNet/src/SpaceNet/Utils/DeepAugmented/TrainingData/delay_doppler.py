@@ -79,6 +79,7 @@ def generate_data_set(
     seed: int | None = 42,
     array_geometry=None,
     observ_ctx: ObservationContext | None = None,
+    correlation_coefficient: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """
     Build a synthetic training set for deep delay-doppler MUSIC.
@@ -124,6 +125,12 @@ def generate_data_set(
             float(rng.uniform(snr_low, snr_high)) for _ in range(training_examples)
         ]
 
+    correlation_matrix = None
+    if correlation_coefficient is not None:
+        correlation_matrix = np.array(
+            [[1.0, correlation_coefficient], [correlation_coefficient, 1.0]]
+        )
+
     for snr in snr_db_set:
         dd_pair = sample_delay_doppler(
             rng=rng,
@@ -146,6 +153,7 @@ def generate_data_set(
             taus=dd_pair[0],
             omegas=dd_pair[1],
             thetas=np.zeros(d_sources),
+            correlation_matrix=correlation_matrix,
         )
         padded_pairs = np.zeros((max_signal_sources, 2), dtype=np.float32)
         padded_pairs[:d_sources] = dd_pair.astype(np.float32)

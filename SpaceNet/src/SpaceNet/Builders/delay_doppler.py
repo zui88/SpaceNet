@@ -17,6 +17,9 @@ from SpaceNet.Recipes.classic_delay_doppler import (
 )
 from SpaceNet.Recipes.deep_delay_doppler import DeepDelayDoppler
 
+from pathlib import Path
+import os
+
 
 def create_delay_doppler_music(configs: Config, kind: str = "fast") -> Engine[RetDD]:
     """
@@ -46,6 +49,7 @@ def create_delay_doppler_music(configs: Config, kind: str = "fast") -> Engine[Re
 def create_deep_doppler_music(
     configs: Config | None = None,
     define_models: bool = False,
+    config_dir: Path = Path(os.getcwd()),
 ) -> Engine[RetDD]:
 
     defined_models = None
@@ -70,7 +74,12 @@ def create_deep_doppler_music(
         )
 
     engine = create_deep_music_engine(
-        configs, DelayDopperEngine, DeepDelayDoppler, model_names, defined_models
+        configs,
+        DelayDopperEngine,
+        DeepDelayDoppler,
+        model_names,
+        defined_models,
+        config_dir,
     )
 
     engine.capability_registry[DeepAugment].register_transformer(DummyScaler)
