@@ -8,9 +8,10 @@ class RMSELoss(PermutatedLoss):
     Root Means Square Error
     """
 
-    def __init__(self, gain: float = 1, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, gain: float = 1, d_source: int = 4, *args, **kwargs):
+        super().__init__(d_source, *args, **kwargs)
         self.gain = gain
+
 
     def compute_error(
         self, ground_truth: tf.Tensor, predictions: tf.Tensor
