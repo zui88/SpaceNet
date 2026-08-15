@@ -3,6 +3,10 @@ from SpaceNet.Synthesizer.geometry import ULAArray
 
 import numpy as np
 
+from time import time
+
+
+module_rng = np.random.default_rng(abs(hash(str(time()))))
 
 def _generate_checked_matrix(
     training_examples,
@@ -75,7 +79,7 @@ def generate_data_set(
     snr_db: tuple[float, float] | float = 30.0,
     deg_range: tuple[float, float] = (-70.0, 70.0),
     min_spacing: float | int = 7.5,
-    seed: int | None = 42,
+    seed: int | None = None,
     correlation_coefficient: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """
@@ -127,7 +131,10 @@ def generate_data_set(
     if (max_signal_sources - 1) * min_spacing > (doa_high - doa_low):
         raise ValueError("Requested minimum spacing is impossible.")
 
-    rng = np.random.default_rng(seed)
+    rng = module_rng
+    if seed is not None:
+        rng = np.random.default_rng(seed)
+
     doa_deg_set = _generate_checked_matrix(
         samples,
         max_signal_sources,

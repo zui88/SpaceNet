@@ -4,19 +4,22 @@ from SpaceNet.Configs.Doa.config import Config as DoaConfig
 from SpaceNet.Synthesizer.geometry import ArrayGeometry
 
 from abc import ABC, abstractmethod
+from time import time
 
 import tensorflow as tf
 import numpy as np
 
 
 class SignalSynthesizer(ABC):
+
+    rng = np.random.default_rng(abs(hash(str(time()))))
+
     def __init__(
         self,
         array_geometry: ArrayGeometry,
         signal_generator: SignalGenerator,
         snr_db: float | tuple[float, float] = 30,
     ):
-        self.rng = np.random.default_rng()
         self.array_geometry = array_geometry
         self.signal_generator = signal_generator
 
@@ -60,7 +63,7 @@ class SignalSynthesizer(ABC):
             )  # (N)
 
         if w is None:
-            raise RuntimeError("wront dimension set!")
+            raise RuntimeError("wrong dimension set!")
 
         return w
 

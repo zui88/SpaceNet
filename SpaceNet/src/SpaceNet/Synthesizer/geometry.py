@@ -8,6 +8,8 @@ type SteeringType = (
     Callable[[np.ndarray, int], np.ndarray] | Callable[[np.ndarray], np.ndarray]
 )
 
+from time import time
+
 
 class ArrayGeometry(ABC):
     """
@@ -67,10 +69,10 @@ class RandomArray(ArrayGeometry):
 
     f.e. (Arrays x Signals)
     """
+    rng = np.random.default_rng(abs(hash(str(time()))))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.rng = np.random.default_rng()
 
     def get_steering(self, thetas: np.ndarray, axis: int = 0):
         if len(thetas) < 1:

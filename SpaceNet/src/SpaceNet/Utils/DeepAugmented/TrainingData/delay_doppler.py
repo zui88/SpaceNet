@@ -4,6 +4,10 @@ from SpaceNet.Synthesizer.synthesizer import DelayDopplerSignalSynthesizer
 
 import numpy as np
 
+from time import time
+
+
+module_rng = np.random.default_rng(abs(hash(str(time()))))
 
 def sample_delay_doppler(
     rng: np.random.Generator,
@@ -26,8 +30,8 @@ def sample_delay_doppler(
     """
 
     low, high = delay_range
-    if low >= high:
-        raise ValueError("delay_range must be (low, high) with low < high.")
+    if low > high:
+        raise ValueError("delay_range must be (low, high) with low <= high.")
     if d_sources <= 0:
         raise ValueError("d_sources must be > 0.")
     if min_separation_delay < 0:
@@ -76,7 +80,7 @@ def generate_data_set(
     doppler_range: tuple[float, float] = (-2.3, 2.3),
     min_doppler_separation: float = 0.05,
     sort_pairs: bool = False,
-    seed: int | None = 42,
+    seed: int | None = None,
     array_geometry=None,
     observ_ctx: ObservationContext | None = None,
     correlation_coefficient: float | None = None,
@@ -111,7 +115,10 @@ def generate_data_set(
     if array_geometry is None:
         array_geometry = RandomArray()
 
-    rng = np.random.default_rng(seed)
+    rng = module_rng
+    if seed is not None:
+        rng = np.random.default_rng(seed)
+
     d_sources = int(rng.integers(min_signal_sources, max_signal_sources + 1))
     signal_set = []
     dd_set = []

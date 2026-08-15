@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import tensorflow as tf
 import numpy as np
 
+from time import time
+
 
 class SignalGenerator(ABC):
     def __init__(self, n_samples: int | None = None, T: float = 1, fs: int = 50):
@@ -110,9 +112,11 @@ class SincTSignal(SignalGenerator):
 
 
 class RandomSignal(SignalGenerator):
+
+    rng = np.random.default_rng(abs(hash(str(time()))))
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.rng = np.random.default_rng()
 
     def function(self, x):
         y = self.rng.standard_normal((self.n_samples,))
