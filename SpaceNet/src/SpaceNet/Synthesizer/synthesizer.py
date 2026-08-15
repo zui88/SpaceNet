@@ -11,7 +11,6 @@ import numpy as np
 
 
 class SignalSynthesizer(ABC):
-
     rng = np.random.default_rng(abs(hash(str(time()))))
 
     def __init__(

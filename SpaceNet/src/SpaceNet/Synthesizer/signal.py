@@ -112,9 +112,8 @@ class SincTSignal(SignalGenerator):
 
 
 class RandomSignal(SignalGenerator):
-
     rng = np.random.default_rng(abs(hash(str(time()))))
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

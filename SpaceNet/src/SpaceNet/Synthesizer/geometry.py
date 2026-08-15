@@ -69,6 +69,7 @@ class RandomArray(ArrayGeometry):
 
     f.e. (Arrays x Signals)
     """
+
     rng = np.random.default_rng(abs(hash(str(time()))))
 
     def __init__(self, *args, **kwargs):

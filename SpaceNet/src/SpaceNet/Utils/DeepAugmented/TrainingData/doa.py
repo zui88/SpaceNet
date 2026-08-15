@@ -8,6 +8,7 @@ from time import time
 
 module_rng = np.random.default_rng(abs(hash(str(time()))))
 
+
 def _generate_checked_matrix(
     training_examples,
     max_signal_sources,

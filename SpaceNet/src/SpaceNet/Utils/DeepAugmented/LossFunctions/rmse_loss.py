@@ -12,7 +12,6 @@ class RMSELoss(PermutatedLoss):
         super().__init__(d_source, *args, **kwargs)
         self.gain = gain
 
-
     def compute_error(
         self, ground_truth: tf.Tensor, predictions: tf.Tensor
     ) -> tf.Tensor:

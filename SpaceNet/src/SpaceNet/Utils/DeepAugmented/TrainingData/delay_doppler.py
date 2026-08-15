@@ -9,6 +9,7 @@ from time import time
 
 module_rng = np.random.default_rng(abs(hash(str(time()))))
 
+
 def sample_delay_doppler(
     rng: np.random.Generator,
     d_sources: int,

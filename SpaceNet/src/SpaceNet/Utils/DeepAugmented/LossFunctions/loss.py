@@ -55,7 +55,7 @@ class PermutatedLoss(keras.losses.Loss, ABC):
         """
         loss_min_batched = []
         for ground_truth, predictions in zip(y_true, y_pred):
-            ground_truth = np.expand_dims(ground_truth, axis=(0,1))
+            ground_truth = np.expand_dims(ground_truth, axis=(0, 1))
             if verbose:
                 print(
                     f"truth: {ground_truth}, prediction: {predictions}, error: {self.compute_error(ground_truth, predictions)}"
