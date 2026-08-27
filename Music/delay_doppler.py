@@ -5,6 +5,9 @@ from SpaceNet.Builders.delay_doppler import (
 from SpaceNet.Engines.engine import RetDD, DelayDoppler, Engine
 from SpaceNet.Synthesizer.synthesizer import DDSynthesizerWrapper
 from SpaceNet.Configs.DelayDoppler.config import Config
+from SpaceNet.Configs.base import Signal, Array
+from SpaceNet.Utils.DeepAugmented.LossFunctions.rmse_loss import RMSELoss
+from SpaceNet.Utils.DeepAugmented.TrainingData.delay_doppler import generate_data_set
 
 from Utils.exit import exit_application
 
@@ -16,6 +19,7 @@ import os
 import sys
 from pathlib import Path
 from threading import Thread, Lock
+from time import time
 
 import typer
 from rich import print
@@ -31,6 +35,8 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDD]:
 
     config.base.inference_mode = False  # just to be explicit
     config.base.d_sources = 2
+    config.base.signal = Signal(fs=25)
+    config.base.array = Array(antennas=8)
 
     match ctx_obj["estimator"]:
         case "cm":
@@ -42,7 +48,7 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDD]:
         case "cmf":
             if verbose:
                 print("classic music fast algorithm")
-            alter_config_from_options(ctx_obj, config)
+            alter_config_from_options(ctx_obj, config, False)
             music_engine = create_classic_music(config, "fast")
 
         case "dacm":
@@ -57,10 +63,10 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDD]:
         case "rnd":
             if verbose:
                 print("random device")
-            config = alter_config_fnrom_options(ctx_obj, config, False)
+            config = alter_config_from_options(ctx_obj, config, False)
 
             class RandomEngine:
-                rng = np.random.default_rng()
+                rng = np.random.default_rng(abs(hash(str(time()))))
 
                 def estimate(self, r_sensed):
                     batch_size, _, _ = r_sensed.shape
@@ -69,8 +75,8 @@ def get_music_engine(ctx_obj: dict[str, Any]) -> Engine[RetDD]:
                         pass
 
                     ret = Ret()
-                    ret._thetas = rng.uniform(
-                        0.5, 16, size=(batch_size, config.base.d_sources)
+                    ret.delay = self.rng.uniform(
+                        0.5, 8, size=(batch_size, config.base.d_sources)
                     )
                     return (ret,)
 
@@ -180,7 +186,10 @@ def estimation(
     config: Config = music_engine.configs
 
     signal_synthesizer = DDSynthesizerWrapper(config)
-    r = signal_synthesizer.generate(tuple(ground_truth))
+    r = signal_synthesizer.generate(
+        taus=ground_truth,
+        omegas=(0.5, -0.5),
+    )
 
     dd_ret = music_engine.estimate(r_sensed=r[None, :])
     print("estimated values: {}".format(dd_ret[0].delay))
@@ -189,7 +198,7 @@ def estimation(
 def run_simulation(
     ctx_obj: dict[str, Any],
     delay_range,
-    ddelay_space,
+    delay_space,
     experiments,
     music_engine: Engine[RetDD] | None = None,
 ) -> (RetDD, np.ndarray):
@@ -216,12 +225,215 @@ def run_simulation(
         signal_generator=config.base.signal_provider,
         array_geometry=config.base.array_geometry,  # todo evaluate
         delay_range=delay_range,
-        min_delay_separation=ddelay_space,
+        doppler_range=(-0.5, 0.5),
+        min_delay_separation=delay_space,
         training_examples=experiments,
         max_signal_sources=config.base.d_sources,
         snr_db=config.base.snr_db,
         correlation_coefficient=correlation_coefficient,
+        observ_ctx=config.observ_ctx,
     )
-
     dd_ret: RetDD = music_engine.estimate(r_sensed=r)
     return dd_ret, dd
+
+
+@app.command()
+def benchmark(
+    ctx: typer.Context,
+    metric: Annotated[
+        str,
+        typer.Option(
+            "--metric",
+            "-m",
+            help="signal-to-noise-ration: snr, correlation coefficient: cor, source distance: sd",
+        ),
+    ] = "snr",
+    grid_range: Annotated[
+        tuple[float, float],
+        typer.Option(
+            "--grid-range",
+            "-r",
+            help="The minimum and maximum value that the range a scanned through.",
+        ),
+    ] = (-5, 35),
+    grid_space: Annotated[
+        float,
+        typer.Option(
+            "--grid-space",
+            "-s",
+            help="Spacing between adjacent points in the Monte-Carlo evaluation grid.",
+        ),
+    ] = 5,
+    estimators: Annotated[
+        list[str],
+        typer.Option(
+            "--estimators",
+            "-e",
+            help="Estimators to evaluate: rnd, cm, dacm.",
+        ),
+    ] = [
+        "rnd",
+        "cm",
+        "dacm",
+    ],
+    plot: Annotated[
+        bool,
+        typer.Option(
+            "--plot",
+            "-p",
+            help="plot the result with pyplot",
+        ),
+    ] = False,
+    experiments: Annotated[
+        int,
+        typer.Option(
+            "--experiments",
+            "-n",
+            help="The number of experiments that is going to drive the experiment.",
+        ),
+    ] = 100,
+    delay_range: Annotated[
+        tuple[float, float],
+        typer.Option(
+            "--delay",
+            help="Time range where impinging signals are emulated.",
+        ),
+    ] = (0.6, 8.0),
+    delay_space: Annotated[
+        float,
+        typer.Option(
+            "--space",
+            help="Minimum time space between impinging signals in seconds.",
+        ),
+    ] = 1,
+):
+    """Runs multible simulations of different estimators.  Each
+    simulation will be plotted.
+
+    """
+    Estimator = str
+
+    GridPoint = float
+    DDGroundTruth = np.ndarray
+    simulation_results: dict[
+        Estimator, list[tuple[GridPoint, tuple[RetDD, DDGroundTruth]]]
+    ] = {}
+    simulation_mutex: Lock = Lock()
+    simulation_threads: list[Thread] = []
+
+    for estimator in estimators:
+        tmp_ctx_obj = ctx.obj.copy()
+        tmp_ctx_obj["estimator"] = estimator
+
+        def simulate(
+            ctx_obj,
+            estimator,
+            experiments,
+            delay_range,
+            delay_space,
+        ):
+            start, stop = grid_range
+            step = grid_space
+            grid = np.arange(start, stop, step)
+            if grid[-1] != stop:
+                grid = np.append(grid, stop)
+
+            music_engine: Engine[RetDD] = get_music_engine(ctx_obj)
+            configs = music_engine.configs
+
+            delay_doppler_ret: RetDD
+            dd_ground_truth: np.ndarray
+            metric_data: list[tuple[GridPoint, tuple[RetDD, DDGroundTruth]]] = []
+            verbose = ctx_obj["verbose"]
+            for x in grid:
+                match metric:
+                    case "snr":
+                        if verbose:
+                            print("signal-to-noise-ration")
+                        configs.base.snr_db = float(x)
+                    case "cor":
+                        if verbose:
+                            print("correlation coefficient")
+                        ctx_obj["correlation"] = x
+                    case "sd":
+                        if verbose:
+                            print("source distance")
+                        T_point = 3
+                        if T_point < x:
+                            delay_range = (T_point, x)
+                            delay_space = x - T_point
+                        else:
+                            delay_range = (x, T_point)
+                            delay_space = T_point - x
+                    case _:
+                        configs.base.snr_db = float(x)
+
+                delay_doppler_ret, dd_ground_truth = run_simulation(
+                    ctx_obj,
+                    delay_range,
+                    delay_space,
+                    experiments,
+                    music_engine,
+                )
+                metric_data.append((x, (delay_doppler_ret, dd_ground_truth)))
+
+            with simulation_mutex:
+                simulation_results[estimator] = metric_data
+
+        simulation_threads.append(
+            Thread(
+                target=simulate,
+                args=(tmp_ctx_obj, estimator, experiments, delay_range, delay_space),
+            )
+        )
+
+    for t in simulation_threads:
+        t.start()
+
+    for t in simulation_threads:
+        t.join()
+
+    fig, ax = plt.subplots()
+    loss: Loss = RMSELoss(d_source=2)
+    for estimator, metric_data in simulation_results.items():
+        xs = []
+        losses = []
+
+        if ctx.obj["verbose"]:
+            print(f"{estimator}")
+        for x, (delay_doppler_ret, dd_ground_truth) in metric_data:
+            dd_result: DelayDoppler = delay_doppler_ret[0]
+            loss_array = loss.loss(dd_ground_truth, dd_result.delay)
+            loss_mean = np.mean(loss_array)
+
+            xs.append(x)
+            losses.append(loss_mean)
+
+            if ctx.obj["verbose"]:
+                print(f"\tgrid: {x} -- loss mean: {loss_mean}")
+
+        if plot:
+            ax.plot(xs, losses, marker="o", label=estimator)
+
+    if plot:
+        ax.set_xscale("linear")
+        ax.set_yscale("log")
+        ax.set_ylabel("RMSE [sec]")
+        match metric:
+            case "snr":
+                ax.set_xlabel("SNR [dB]")
+            case "cor":
+                ax.set_xlabel(r"$\sigma^2$")
+            case "sd":
+                ax.axvline(
+                    3,
+                    color="r",
+                    linestyle="-",
+                    label="sig2",
+                )
+                ax.set_xlabel(r"sig1 $(\Delta\tau)$[sec]")
+            case _:
+                ax.set_xlabel("SNR [dB]")
+        ax.grid(True, which="both")
+        ax.legend()
+        plt.show()

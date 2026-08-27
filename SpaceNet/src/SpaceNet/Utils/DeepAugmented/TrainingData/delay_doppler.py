@@ -55,13 +55,25 @@ def sample_delay_doppler(
             "Cannot fit all sources in doppler_range with the required min_separation_doppler."
         )
 
-    for _ in range(max_attempts):
-        delays = np.sort(rng.uniform(low, high, size=d_sources))
-        dopplers = np.sort(rng.uniform(doppler_low, doppler_high, size=d_sources))
-        if np.all(np.diff(delays) >= min_separation_delay) and np.all(
-            np.diff(dopplers) >= min_separation_doppler
-        ):
-            return np.stack([delays, dopplers], axis=0)
+    SUPPORTED_SIGNAL_SOURCES = 2
+    if low != high:
+        margin = abs(min_separation_delay - (high - low))
+        eps = 0.05
+        if margin < eps and d_sources == SUPPORTED_SIGNAL_SOURCES:
+            return np.full((SUPPORTED_SIGNAL_SOURCES, 2), [low, high])
+        else:
+            for _ in range(max_attempts):
+                delays = np.sort(rng.uniform(low, high, size=d_sources))
+                dopplers = np.sort(
+                    rng.uniform(doppler_low, doppler_high, size=d_sources)
+                )
+                if np.all(np.diff(delays) >= min_separation_delay) and np.all(
+                    np.diff(dopplers) >= min_separation_doppler
+                ):
+                    return np.stack([delays, dopplers], axis=0)
+
+    else:
+        return np.full((d_sources, SUPPORTED_SIGNAL_SOURCES), [3, 3])
 
     raise RuntimeError(
         "Failed to sample valid delay-doppler pairs. Relax the separation constraints or widen the ranges."
