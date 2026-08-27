@@ -985,7 +985,7 @@ requires-dist = [
 
 [[package]]
 name = "spacenet"
-version = "0.2.4"
+version = "0.2.5"
 source = { editable = "SpaceNet" }
 
 [[package]]
