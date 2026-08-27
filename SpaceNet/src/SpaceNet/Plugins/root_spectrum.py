@@ -5,6 +5,7 @@ from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 
 def find_roots(coeffs: list[tf.Tensor]) -> tf.Tensor:
     coeffs = tf.cast(tf.stack(coeffs), dtype=tf.complex128)
+    # normalization
     first_row = tf.reshape(-coeffs[1:] / coeffs[0], [1, -1])
     companion = tf.keras.ops.diag(
         tf.keras.ops.ones(coeffs.shape[0] - 2, dtype=coeffs.dtype),

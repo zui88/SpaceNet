@@ -5,6 +5,8 @@ import tensorflow as tf
 from SpaceNet.Plugins.plugin import Link, Plugin, Ports
 
 
+# Array and Statistical Signal Processing
+# p.21
 def _mos_penalty(i, eigs, n_samples, n_sensors):
     noise = eigs[i:]
     am = np.mean(noise)
