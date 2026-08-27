@@ -1,6 +1,6 @@
 [project]
 name = "music"
-version = "0.4.3"
+version = "0.5.0"
 description = "Add your description here"
 readme = "README.org"
 requires-python = ">=3.13"

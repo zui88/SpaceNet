@@ -21,7 +21,7 @@ app.add_typer(delay_doppler.app, name="dd")
 
 def version_cb(value: bool):
     if value:
-        typer.echo("Music version: 0.4.3")
+        typer.echo("Music version: 0.5.0")
         typer.echo("SpaceNet version: {}".format(sn.__version__))
         raise typer.Exit()
 
