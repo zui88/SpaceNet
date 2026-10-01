@@ -2,5 +2,29 @@ This project uses /uv/ as package and dependency manager.  To get
 startet the easiest way is to get /uv/ and put
 
 #+begin_src sh
-uv init
+uv sync
 #+end_src
+
+This command pulls all dependencies necessary for getting in
+interaction with /SpaceMusic/ and its corresponding library /SpaceNet/
+and application /Music/.  After synchronization step the pulled
+toolchain needs to be activated by
+
+#+begin_src sh
+source .venv/bin/activate
+#+end_src
+
+With ~--help~ at the end one can explore the possibilities, e.g. with
+
+#+begin_src sh
+uv run Music/music.py doa --help
+#+end_src
+
+For the use case to run one simple estimation one could put
+
+#+begin_src sh
+uv run Music/music.py doa estimation 45 0
+#+end_src
+
+and the underlying music engine will try to estimate the ground truth
+~45~ and ~0~.
