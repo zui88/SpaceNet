@@ -14,6 +14,19 @@ toolchain needs to be activated by
 source .venv/bin/activate
 #+end_src
 
+Go into the sub-folder SpaceNet and build the SpaceNet library
+#+begin_src sh
+cd SpaceNet
+uv build
+#+end_src
+
+Go back into the main folder and install the SpaceNet library (update the 
+version according to the built files from previous step)
+#+begin_src sh
+cd ..
+uv pip install dist/spacenet-0.2.5-py3-none-any.whl
+#+end_src
+
 With ~--help~ at the end one can explore the possibilities, e.g. with
 
 #+begin_src sh
